@@ -1,0 +1,462 @@
+Proyecto 10
+Día 49
+Proyecto 10; parte 1
+
+Si todas las propiedades de un tipo ya están conformadas al protocolo Codable, entonces así será siempre ya sin trabajo extra - De hecho Swift sintetizará el código requerido para archivar y des-archivar tu tipo como sea necesario. Sin embargo, esto no funciona si utilizamos wrappers como @Published, lo cual significa que conformarse a Codable va a requerir un poco de trabajo extra en nuestro comportamiento.
+
+Para arreglar esto, necesitamos implementar Codable por nuestra cuenta. Esto va a resolver el problema de @Published, pero también es una solución y una habilidad muy valiosa ya que nos permite controlar exactamente que datos son guardados y cómo es que esto pasa.
+
+
+Día 50
+Proyecto 10; parte 2
+
+
+- Tomando los detalles para las ordenes básicas
+
+
+El primer paso en este proyecto va a ser crear una pantalla que tome los detalles básicos de una orden: cuántos cupcakes se requieren, de qué tipo, y si llevan alguna caracterización en especial.
+
+Antes de pasar al UI, debemos definir primero nuestro modelo de datos. Previamente estábamos usando @State para tipos de valores simples y @ObservedObject para referencia de tipos y también ya vimos cómo es que es posible tener una clase de ObservableObject conteniendo structs y así tener el beneficio de ambas cosas (clases y structs).
+
+Aquí vamos a tomar una solución diferente: vamos a tener una sola clase que guarde todos nuestros datos que se irán pasando de pantalla en pantalla. Esto significa que todas las pantallas en nuestra app estarán compartiendo los mismos datos, lo cual trabajará de manera excelente.
+
+Por ahora, esta clase no va a necesitar muchas propiedades:
+
+- El tipo de cupcakes, más un arreglo estático de todas las opciones posibles
+- Cuántos cupcakes quiere el usuario
+- Si el usuario quiere hacer algún pedido especial, con lo cual nuestro UI desplegará opciones extras
+- Si el usuario quiere congelamiento extra en sus cupcakes
+- Si quiere sus cupcakes espolvoreados (sprinkled)
+
+Cada uno de ellos necesitan actualizar su UI cuando cambien, lo que significa que necesitamos marcarlas con @Published y hacer que la clase completa se conforme a ObservableObject
+
+Entonces, hay que crear un nuevo archivo que se llame Order.swift y escribir la clase Order
+
+- Aqui se crea el código dentro de Xcode
+
+Y ahora podemos crear una instancia dentro de ContentView agregando lo siguiente:
+- @ObservedObject var order = Order()
+
+Ese es el único lugar en donde la orden será creada - esa propiedad será pasada a cualquier otra pantalla en nuestra app y así trabajen todas con los mismos datos
+
+Hay que crear el UI para esta pantalla en 3 secciones, empezando con el tipo de cupcake y la cantidad. La primer secciones va a mostrar un picker permitiendo a los usuarios escoger entre Vainilla, Fresa, chocolate y cakes de arcoíris, luego un Stepper con un rango de 3 hasta 20 para escoger cuántos cupcakes se quieren. Todo va a ser envuelto en un Form, el cual sí mismo está puesto en un Navigation View para que se pueda asignar un título.
+
+Poner el body de ContentView:
+
+NavigationView {
+    Form {
+        Section {
+            Picker("Select your cake type", selection: $order.type) {
+                ForEach(0..<Order.types.count) {
+                    Text(Order.types[$0])
+                }
+            }
+
+            Stepper(value: $order.quantity, in: 3...20) {
+                Text("Number of cakes: \(order.quantity)")
+            }
+        }
+    }
+    .navigationBarTitle("Cupcake Corner")
+}
+
+En este punto al correr la app pareciera que todo va bien, sin embargo “deberíamos” poder observar un error de Xcode que marca “ForEach<Range, Int, Text> count (4) != its initial count (1)”
+
+Y se dice que “deberíamos” porque pareciera que es más un bug de parte de SwiftUI que otra cosa
+
+Si no sale como tal el error, todo bien, pero en caso de que salga se resuelve con lo siguiente:
+
+ForEach(0..<Order.types.count, id: \.self) {
+
+Es el mismo ForEach que ya habíamos creado solo que ahora le damos un id específico para que no haya error dentro de Xcode
+Esperemos que en versiones futuras de Xcode ese error desaparezca
+
+La segunda sección de nuestro Form va a acarrear tres switches estilo toggle ligados a specialRequestEnabled, extraFrosting y addSprinkles respectivamente. Sin embargo, el segundo y tercer switches deberían ser visibles únicamente cuando el primero esté habilitado, y necesitamos una condición para que esto funcione.
+
+Agregamos esta Section dentro del Form:
+
+Section {
+    Toggle(isOn: $order.specialRequestEnabled.animation()) {
+        Text("Any special requests?")
+    }
+
+    if order.specialRequestEnabled {
+        Toggle(isOn: $order.extraFrosting) {
+            Text("Add extra frosting")
+        }
+
+        Toggle(isOn: $order.addSprinkles) {
+            Text("Add extra sprinkles")
+        }
+    }
+}
+
+Con eso aseguramos que la app le pregunta al usuario si quiere algo extra, y si sí, ya se activan los otros 2 switches.
+El modifier .animation() hace que los switches aparezcan de manera aún más bonita
+
+Sin embargo, ahora tenemos otro bug, pero ahora es uno que hemos provocado nosotros mismos: Si activamos el toggle de pedido especial y luego encendemos los otros 2 switches o solo uno y solo otro no importa, si los dejamos encendidos y luego apagamos el de pedidos especiales, los otros dos no cambian su estado, simplemente se quedan así como se quedaron la ultima vez.
+
+Para solucionar este bug, basta con hacer el set de los toggles a false cada que se apague el toggle de pedidos especiales.
+
+Agregar lo siguiente en el archivo Order.swift en la variable de specialRequestEnabled:
+
+@Published var specialRequestEnabled = false {
+    didSet {
+        if specialRequestEnabled == false {
+            extraFrosting = false
+            addSprinkles = false
+        }
+    }
+}
+
+La tercera sección se podría decir que es la más fácil porque sólo va a llevar un NavigationLink apuntando a la siguiente pantalla. No tenemos una segunda pantalla, pero podemos irla agregando rápidamente: crear una vista nueva de SwiftUI (un archivo nuevo de tipo SwiftUI View) llamado AddressView y darle una propiedad de order junto a ObservedObject, como lo siguiente:
+
+struct AddressView: View {
+    @ObservedObject var order: Order
+
+    var body: some View {
+        Text("Hello World")
+    }
+}
+
+struct AddressView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddressView(order: Order())
+    }
+}
+
+En un momento lo hacemos un poco más funcional, pero por ahora esto significa que podemos regresar a ContentView.swift y agregar la ultima Section para nuestro Form. Esto creará un NavigationLink que apunta a AddressView, pasando el objeto del momento.
+
+Agregamos la siguiente sección:
+
+Section {
+    NavigationLink(destination: AddressView(order: order)) {
+        Text("Delivery details")
+    }
+}
+
+Con esto completamos la primer pantalla.
+
+
+
+- Revisando que sea una dirección (address) correcta
+
+
+
+El segundo paso para nuestro proyecto va a ser permitir que el usuario ingrese una dirección al Form y como parte de eso tenemos que agregar cierta validación - sólo queremos proceder al tercer paso si la dirección se ve bien (si es la correcta)
+
+Podemos lograr esto agregando un Form al struct de AddressView que ya habíamos hecho el cual contendrá cuatro TextFields: nombre, calle, ciudad y código postal. Luego podemos agregar un NavigationLink para irnos a la siguiente pantalla, que es en donde el usuario verá su precio final y hacer check out.
+
+Para no hacer esto tan tedioso, empezaremos agregando una nueva vista llamada CheckoutView, en donde esta view de address va a hacer push cuando el usuario esté listo. Esto solo hace que no perdamos tiempo agregando un placeholder que nos recuerde regresar después.
+
+Creamos el nuevo archivo tipo SwiftUI View llamado CheckOutView y darle la propiedad de ObservedObject junto con Order:
+
+struct CheckoutView: View {
+    @ObservedObject var order: Order
+
+    var body: some View {
+        Text("Hello, World!")
+    }
+}
+
+struct CheckoutView_Previews: PreviewProvider {
+    static var previews: some View {
+        CheckoutView(order: Order())
+    }
+}
+
+De nuevo, más tarde volveremos a esta parte, pero primero vamos a implementar el AddressView.swift. Como ya dijimos, necesita llevar un Form con cuatro text fields ligados a cuatro propiedades de nuestro objeto Order, más un NavigationLink pasando el control de nuestra vista de check out.
+
+Primero, en Order.swift necesitamos cuatro propiedades @Published para almacenar los detalles del envío:
+
+- @Published var name = “”
+- @Published var streetAddress = “”
+- @Published var city = “”
+- @Published var zip = “”
+
+Luego, en AddressView.swift agregamos lo siguiente en el body (en donde se reemplaza el código existente con este nuevo):
+
+Form {
+            Section {
+                TextField("Name", text: $order.name)
+                TextField("Street Address", text: $order.streetAddress)
+                TextField("City", text: $order.city)
+                TextField("Zip", text: $order.zip)
+            }
+
+            Section {
+                NavigationLink(destination: CheckoutView(order: order)) {
+                    Text("Check out")
+                }
+            }
+        }
+        .navigationBarTitle("Delivery details", displayMode: .inline)
+
+Como podemos ver, eso pasa a nuestro objeto de tipo order a un nivel más profundo, a CheckoutView, lo que significa que ahora tenemos 3 vistas apuntando a los mismos datos.
+
+Al correr la app en estos momentos, podemos ver que funciona bien, y que los datos que está jalando como tal de hecho son los mismos siempre. Esta es la ventaja que hay que ver al momento de trabajar con alguna clase que nos esté ayudando a almacenar los datos de nuestra aplicación y no almacenar todo en un struct. Almacenarlo todo en un struct nos puede llevar a ciertos problemas pero no por SwiftUI, sino porque el agarre de datos debe ser muy específico o si no vamos a perder algún dato o valor en el camino.
+
+Ahora que AddressView funciona, es tiempo de detener al usuario al momento de ingresar datos, a menos que éstos estén bien escritos. Necesitamos una condición. ¿Qué condición? Bueno, eso depende de cada quién y lo que queramos en nuestra app. En lugar de validar por longitud de cadenas (porque estaríamos excluyendo a cierto público si hacemos eso), mejor solo vamos a validar diciendo que para que la dirección sea válida, todos los campos deben estar llenados.
+
+Lo preferible es agregar esta instrucción que es algo compleja a nuestros datos, por lo que lo agregaremos a nuestra clase Order en el archivo Order.swift:
+
+var hasValidAddress: Bool {
+    if name.isEmpty || streetAddress.isEmpty || city.isEmpty || zip.isEmpty {
+        return false
+    }
+
+    return true
+}
+
+Y ahora podemos usar esa condición en conjunto con el modificador .disabled() de SwiftUI - que es adjuntar eso a cualquier vista de la mano de una condición que haya que revisar, y la vista dejará de responder a la interacción de usuario si la condición es verdadera.
+
+En nuestro caso, la condición que queremos revisar es la propiedad computada que acabamos de escribir, hasValidAddress. Si eso es falso, entonces en la Section del Form que contiene a nuestro NavigationLink debería (ought) estar deshabilitada, porque queremos que el usuario deje los detalles de su envío primero.
+
+Entonces, agregamos este modificador al final de nuestra segunda Section en AddressView.swift:
+
+.disabled(order.hasValidAddress == false)
+
+Observar lo que ocurre al correr la app.
+
+
+
+- Preparándose para el checkout
+
+
+La última pantalla para nuestra app es CheckOutView, y es una historia con doble cara: la primer cara es el UI básico, el cual debería dar poco problema para el que esté aprendiendo; pero la segunda cara es algo completamente nuevo: necesitamos hacer el encode de nuestra clase Order a JSON, mandarlos al internet, y recibir una respuesta.
+
+Pronto veremos la parte del encoding, pero primero hay que atacar la parte sencilla: darle a CheckoutView una interfaz de usuario. Más específicos, crearemos un ScrollView con una imagen, el precio total de la orden, y un botón “Place Order” para hacer funcionar la red de nuestra app.
+
+Para la imagen, vamos a requerir de los archivos para este proyecto. Son las 2 imágenes de cupcakes que se encuentran en la carpeta del proyecto 10. Las copiamos al asset catalog.
+Vamos a tener que utilizar GeometryReader para darle un buen aspecto a la imagen con relación al ancho de la pantalla y para evitar que se vea raro en dispositivos mas pequeños.
+
+Para el costo de la orden, en realidad no tenemos en este momento ningún rango de precios de nuestros cupcakes en nuestros datos, así que podemos solamente inventarnos alguno. La base de los precios será la siguiente:
+
+- Habrá un precio base de 2 dólares por cupcake
+- Se le irá agregando valor a un cupcake que lleve configuración un poco más complicada
+- Extra frosting costará 1 dólar más
+- Espolvoreado costará 50 centavos más por cupcake
+
+Nos vamos al archivo Order.swift, es decir nuestros datos, e implementamos la lógica que acabamos de mencionar pero ahora en código:
+
+var cost: Double {
+    // $2 per cake
+    var cost = Double(quantity) * 2
+
+    // complicated cakes cost more
+    cost += (Double(type) / 2)
+
+    // $1/cake for extra frosting
+    if extraFrosting {
+        cost += Double(quantity)
+    }
+
+    // $0.50/cake for sprinkles
+    if addSprinkles {
+        cost += Double(quantity) / 2
+    }
+
+    return cost
+}
+
+La vista (o bien la interfaz) que tenemos en este momento es sencilla (straightforward): utilizaremos GeometryReader para asegurarnos que nuestra imagen del cupcake sea del tamaño correcto, un VStack dentro de un ScrollView vertical, luego nuestra imagen, el texto del costo, y el boton estilo placeholder.
+
+Haremos la parte de llenar la acción del boton en un momento, pero primero tengamos nuestro layout básico terminado.
+
+Reemplacemos el Text(“Hello, World!) del body del archivo CheckoutView.swift con lo siguiente:
+
+GeometryReader { geo in
+    ScrollView {
+        VStack {
+            Image("cupcakes")
+                .resizable()
+                .scaledToFit()
+                .frame(width: geo.size.width)
+
+            Text("Your total is $\(self.order.cost, specifier: "%.2f")")
+                .font(.title)
+
+            Button("Place Order") {
+                // place the order
+            }
+            .padding()
+        }
+    }
+}
+.navigationBarTitle("Check out", displayMode: .inline)
+
+Con esto terminamos la parte gráfica… pero falta la parte mañosa…
+
+
+Día 51
+Proyecto 10; parte 3
+
+
+- Aplicando Encoding a una clase ObservableObject
+
+Hemos organizado nuestro código de manera que tenemos un objeto de tipo Order que se comparte entre nuestras pantallas, lo cual tiene como ventaja que podemos ir tanto para adelante com para atrás entre esas pantallas sin perder los datos. Sin embargo, esta ventaja también conlleva un costo: tuvimos que usar el wrapper de @Published para las propiedades en la clase, y tan pronto como hicimos eso perdimos el soporte para el aditamento automático de Codable.
+
+Para comprobarlo, podemos agregar el protocolo Codable de la siguiente manera:
+
+class Order: ObservableObject, Codable {
+
+Ahora habrá un error, porque Swift no entiende cómo hacer encode y luego decode propiedades publicadas (published). Esto es un problema, porque de hecho lo que queremos es subir la orden del usuario a un servidor de internet, lo que significa que lo necesitamos como JSON - “necesitamos” que el protocolo Codable funcione.
+
+La manera de arreglarlo aquí es agregando Codable a mano, lo que significa decirle a Swift lo que debe ser encodificado (encoded), como debe serlo, y también como debería ser descodificado (decoded) - convertido de vuelta de Json a datos tipo Swift.
+
+Ese primer paso significa agregar un enum que se conforme a CodingKey, listando todas las propiedades que queremos guardar. En nuestra clase Order es prácticamente todo - lo único que no necesitamos es la propiedad de tipos estáticos.
+
+Entonces, en el archivo Order.swift agregamos lo siguiente:
+
+enum CodingKeys: CodingKey {
+	case type, quantity, extraFrosting, addSprinkles, name, streetAddress, city, zip
+}
+
+El segundo paso requiere que escribamos el método encode(to: ) que cree un contenedor utilizando las llaves de código para el enum que acabamos de crear, luego que escriba todas las propiedades adjuntas a su respectiva llave. Esto no es más que llamar a encode(_:forkey:) repetidamente, cada vez pasando una propiedad diferente y llave diferente. 
+
+Agregamos el siguiente método:
+
+func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+
+    try container.encode(type, forKey: .type)
+    try container.encode(quantity, forKey: .quantity)
+
+    try container.encode(extraFrosting, forKey: .extraFrosting)
+    try container.encode(addSprinkles, forKey: .addSprinkles)
+
+    try container.encode(name, forKey: .name)
+    try container.encode(streetAddress, forKey: .streetAddress)
+    try container.encode(city, forKey: .city)
+    try container.encode(zip, forKey: .zip)
+}
+
+Ya que ese método que acabamos de escribir está marcado con throws, no necesitamos preocuparnos por darle un catch cualquiera de los errores que se lleven acabo por dentro - solo agregamos try sin la necesidad de un catch. sabiendo que cualquier problema será automáticamente propagado desde arriba y será mandado a otro lado.
+
+El último paso, es implementar un inicializador requerido para hacer decode a una instancia de Order de algún dato archivado. Esto no es más que el proceso inverso de hacer encode, y de hecho toma los mismos beneficios de usar throws:
+
+required init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+
+    type = try container.decode(Int.self, forKey: .type)
+    quantity = try container.decode(Int.self, forKey: .quantity)
+
+    extraFrosting = try container.decode(Bool.self, forKey: .extraFrosting)
+    addSprinkles = try container.decode(Bool.self, forKey: .addSprinkles)
+
+    name = try container.decode(String.self, forKey: .name)
+    streetAddress = try container.decode(String.self, forKey: .streetAddress)
+    city = try container.decode(String.self, forKey: .city)
+    zip = try container.decode(String.self, forKey: .zip)
+}
+
+Vale mucho la pena agregar aquí que puedes hacer encode a tus datos en el orden que tu quieras - no es necesario seguir un orden estricto igual al de como están declaradas tus propiedades.
+
+Ahora ya funciona el código con el protocolo Codable conformado en Order: hicimos un “bypass” del wrapper para la propiedad @Published, leyendo y escribiendo los valores directamente. Sin embargo, el código no compilará - de hecho, ahora tenemos un error completamente distinto en ContentView.swift (de hecho varios).
+
+El problema ahora, es que acabamos de crear un inicializador personalizado (custom init) para nuestra clase Order, init(from: ), y Swift quiere que lo usemos en todos lados - aun en los lugares que solo queremos crear una orden vacía porque la app acaba de empezar.
+
+Afortunadamente, Swift nos permite agregar inicializadores múltiples a una clase, para que así podamos crearlo en una gran variedad de formas. En esta situación, eso significa que necesitamos escribir un nuevo inicializador que pueda crear una orden sin nada de datos - confiará enteramente (rely) en los valores de la propiedad por defecto que asignamos.
+
+Entonces, agregamos este inicializador a Order:
+
+init() {}
+
+Ahora el código compila a la perfección de nuevo y de conformidad (conformance) con Codable esta completa. Esto significa que estamos listos para el paso final: mandar y recibir objetos de tipo Order en la red.
+
+
+
+- Mandando y recibiendo ordenes sobre internet
+ 
+
+iOS viene con una gran funcionalidad para lidiar con la red, y en particular la clase URLSession lo hace sorprendentemente fácil para enviar y recibir datos. Si combinamos eso con Codable para convertir objetos tipo Swift de y para JSON, y URLRequest, lo cual nos deja configurar exactamente el cómo los datos deberían ser enviados. Podemos lograr grandes cosas en tan solo unas 20 líneas de código.
+
+Primero, vamos a crear un método que podamos llamar de nuestro boton “Place Order” - agregar lo siguiente a CheckoutView.swift :
+
+func placeOrder(){
+}
+
+Y ahora, modifica el boton para que quede de la siguiente manera:
+
+Button(“Place Order”){
+	self.placeOrder()
+}
+
+Dentro de nuestro método placeOrder() necesitamos hacer 3 cosas:
+
+1. Convertir nuestra orden actual a un tipo de dato JSON que pueda ser enviado.
+2. Preparar un URLRequest para mandar nuestros datos codificados (encoded) como JSON
+3. Correr la petición y procesar la respuesta (response)
+
+El primer punto es prácticamente directo, así que hagámoslo. Ya hicimos que la clase Order se conforme a Codable, lo que significa que podemos usar JSONEncoder para archivarla agregando ese código a placeOrder():
+
+guard let encoded = try? JSONEncoder().encode(order) else {
+	print(“Failed to encode order”)
+	return
+}
+
+El segundo paso - preparando un URLRequest para mandar nuestros datos - requiere un poco de quebrarse la cabeza. Como verás, necesitamos adjuntar los datos en una manera muy específica para que el servidor pueda procesarla correctamente, lo que significa que necesitamos proveer dos piezas extra de datos más allá (beyond) de nuestra orden:
+
+1. El método HTTP de una petición determina cómo los datos deberían ser enviados. Hay bastantes métodos HTTP, pero en la práctica sólo GET (“Quiero leer los datos”) y POST (“Quiero escribir datos”) son muy usados. Queremos escribir datos aquí, así que usaremos POST.
+2. El tipo de contenido de una petición determina que tipo de dato es enviado, lo cual afecta a la manera en que el servidor trata a nuestros datos. Esto es especificado a lo que se llama un tipo MIME, el cual fue originalmente hecho para mandar archivos adjuntos en un email, y tiene muchas PERO MUCHAS opciones específicas.
+
+Entonces, el siguiente código para placeOrder() será crear URLRequest, configurarlo para mandar datos JSON usando un POST de HTTP y adjuntar nuestros datos.
+
+Por supuesto, la verdadera pregunta es a dónde enviar nuestra petición, y para fines de este proyecto no vamos a montar un servidor completo en la web. Entonces, en vez de eso vamos a ir de la mano de un sitio web que puede sernos de mucha ayuda que es https://reqres.in - nos deja mandarle los datos que queramos y automáticamente mandarlos de vuelta. Esta es una manera excelente de hacer código prototipo de red porque recibes datos reales de los mismos que envías.
+
+Agregamos este código a placeOrder():
+
+let url = URL(string: "https://reqres.in/api/cupcakes")!
+var request = URLRequest(url: url)
+request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+request.httpMethod = "POST"
+request.httpBody = encoded
+
+Nótese cómo se agregó un “force unwrap” para el inicializador URL(string:). Crear URLs desde cadenas puede fallar porque puede ser que haya agregado un texto de algarabía (gibberish), pero aquí pusimos el URL completo para que siempre podamos ver que es correcto - no hay string interpolations que puedan causar problemas.
+
+En este punto ya tenemos todo listo para hacer nuestra petición hacia la red, lo cual haremos usando URLSession.shared.dataTask() y la petición del URL que acabamos de hacer. Recuerda, si no llamamos a resume() en nuestra tarea de datos, nunca empezará, por lo cual siempre escribo la tarea y llamo a resume antes de llenar el body.
+
+Entonces, primero agregamos esto a placeOrder() :
+
+URLSession.shared.dataTask(with: request) { data, response, error in
+    // handle the result here.
+}.resume()
+
+Ahora para el trabajo importante: necesitamos leer el resultado de nuestra petición. Si algo salió mal - a lo mejor porque no había conexión a internet - sólo imprimimos un mensaje y retornamos.
+
+Agregamos lo siguiente a placeOrder() debajo de // handle the result here :
+
+guard let data = data else {
+    print("No data in response: \(error?.localizedDescription ?? "Unknown error").")
+    return
+}
+
+Si hacemos que pase eso, eso significa que tenemos un orden de datos de vuelta del servidor. Debido a que estamos usando ReqRes.in, lo que pasará es que recibiremos de vuelta el mismo orden que acabamos de mandar, lo que significa que podemos usar JSONDecoder para convertirlo de vuelta de JSON a un objeto.
+
+Para confirmar que todo haya ido correctamente, vamos a mostrar una alerta conteniendo algunos detalles de nuestra orden, pero vamos a utilizar la orden -decodificada- que recibimos de vuelta de ReqRes.in Si, esto debería ser idéntico al que acabamos de mandar, así que si no lo es, significa que cometimos un error en nuestro código.
+
+Mostrar una alerta requiere propiedades para almacenar el mensaje y si es visible o no, así que hay que agregar estas dos nuevas propiedades a CheckOutView.swift :
+
+@State private var confirmationMessage = “”
+@State private var showingConfirmation = false
+
+También necesitamos agregar un modificador alert() para poder observar ese Booleano, y mostrar una alerta hasta que sea verdadera.
+
+Agregar este modificador a GeometryReader en CheckoutView :
+
+.alert(isPresented: $showingConfirmation) {
+    Alert(title: Text("Thank you!"), message: Text(confirmationMessage), dismissButton: .default(Text("OK")))
+}
+
+Y ahora podemos terminar nuestro código sobre la red: vamos a decodificar los datos que vienen de vuelta, usarlos para posicionar nuestra propiedad de la confirmación del mensaje, luego posicionar showingConfirmation a verdadero para que aparezca la alerta. Si la decodificación falla - si el servidor manda de vuelta algo que por alguna razón no era una orden - solo se imprime un mensaje de error.
+
+Agregar este ultimo código en placeOrder(), justo dentro del closure dataTask(with:) :
+
+if let decodedOrder = try? JSONDecoder().decode(Order.self, from: data) {
+    self.confirmationMessage = "Your order for \(decodedOrder.quantity)x \(Order.types[decodedOrder.type].lowercased()) cupcakes is on its way!"
+    self.showingConfirmation = true
+} else {
+    print("Invalid response from server")
+}
+
+Con eso tenemos la app prácticamente terminada.
