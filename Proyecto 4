@@ -1,0 +1,150 @@
+Día 26
+Proyecto 4; parte 1
+
+Machine Learning
+
+- Introducción
+
+Este proyecto de SwiftUI es otra app de agregar “Forms” que preguntará al usuario que ingrese información y convertir esa información en una alerta.
+
+En este proyecto, que pareciera muy simple, será la introducción al uso de Machine Learning
+
+Todos los iPhone vienen con una tecnología llamada Core ML, lo que nos permite escribir código que haga predicciones acerca de nuevos datos basados en datos previos que ya ha visto. Empezaremos con datos raros o al azar, se los damos a nuestra mac como datos de entrenamiento, luego usar los resultados para construir una app capaz de hacer buenas estimaciones sobre nuevos datos - Todo dentro del dispositivo, y de manera completamente privada para los usuarios.
+
+La app que haremos se llamará BetterRest y es una app que estará diseñada para ayudar a los bebedores de café tener una buena noche de sueño preguntando 3 cosas:
+1. ¿Cuándo quieren levantarse?
+2. ¿Cuántas horas de sueño quiere (deseables)?
+3. ¿Cuántas tazas de café toman por día?
+
+Una vez que tengamos esos 3 valores, los alimentaremos con Core ML para obtener un resultado diciéndonos cuando deberían irse a dormir. Si lo pensamos, hay miles de millones de posibles respuestas - todos los variados tiempos para despertar multiplicados por todos los números de horas de sueño, multiplicado nuevamente por el rango completo de cantidad de café.
+
+Aquí es en donde el machine learning entra: usando una técnica llamada análisis de regresión podemos preguntarle a la computadora que con pase con un algoritmo capaz de representar todos nuestros datos. Esto permite aplicar el algoritmo a datos frescos que nunca antes haya visto, y obtener resultados acertados.
+
+-> Descargar los archivos BetterRest.csv y SleepCalculator.mlmodel
+
+Creamos un proyecto nuevo para SwiftUI
+
+
+
+- Ingresando números con Stepper
+
+SwiftUI tiene dos formas de permitir a los usuarios ingresar números, y lo que estaremos utilizando para este proyecto es Stepper: un simple boton de + y - que se puede presionar para seleccionar un número de manera precisa. La otra opción es Slider, el cual seguiremos utilizando después - también nos permite seleccionar de un rango de valores pero de manera menos precisa.
+
+Steppers son lo suficientemente inteligentes para trabajar con cualquier tipo de número que queramos - podemos enlazarlos con Int, Double, y más, y automáticamente se va a adaptar. Por ejemplo, podríamos crear una propiedad como esta:
+
+@State private var sleepAmount = 8.0
+
+Luego podemos enlazar eso a un Stepper para que muestre el valor actual, como esto:
+
+Stepper(value: $sleepAmount){
+	Text(“\(sleepAmount) hours”)
+}
+
+Cuando ese código corra veremos 8.000000 horas, y puedes seleccionar el - o el + para irte hacia abajo a 7 o 6 y hacia números negativos o hacia arriba a 9, 10, 11 y así.
+
+Por defecto los Steppers están limitados solo por el rango de su almacenamiento. Estamos usando un Double en este ejemplo, lo que significa que el máximo valor del Slider sera de 1.7976931348623157e+308.
+
+Poniendo el rango:
+
+Stepper(value: $sleepAmount, in: 4…12){
+	Text(“\(sleepAmount) hours”)
+}
+
+Con ese cambio, el Stepper empezará en 8, luego permitirá al usuario movernos entre 4 y 12 de manera inclusiva, pero nada más. Esto nos permite controlar el rango de sueño para que los usuarios no intenten dormir por 24 horas, pero eso también nos permite rechazar valores imposibles - No puedes dormir por -1 horas por ejemplo.
+
+Hay un tercer parámetro bastante útil para Stepper, el cual es un valor de tipo step - que tan lejos mover el valor en cada momento que se presione el + o el -. De nuevo, esto puede ser cualquier orden numérico, pero necesita coincidir con el tipo utilizado para el enlazado. Entonces, si estás enlazando a un entero no podemos utilizar un Double para el valor de tipo step.
+
+En esta instancia, podríamos decir que los usuarios puedan seleccionar cualquier valor de sueño entre 4 y 12, moviendo en intervalos de 15 minutos el incremento:
+
+Stepper(value: $sleepAmount, in: 4…12, step: 0.25){
+	Text(“\(sleepAmount) hours”)
+}
+
+Eso empieza a verse útil - tenemos un rango preciso de valores razonables, un incremento con step sensible de 0.25, y los usuarios pueden ver exactamente lo que han escogido en cada momento.
+
+Antes de seguir, hay que arreglar ese texto: dice 8.000000 ahorita, lo cual es acertado pero digamos que demasiado acertado. Podemos usar la interpolación de cadenas como lo hemos trabajado anteriormente:
+
+Text(“\(sleepAmount, specifier: “%.2f”) hours”)
+
+Pero también podemos dejarlo como %g para que no despliegue ceros innecesarios.
+
+Text(“\(sleepAmount, specifier: “%g”) hours”)
+
+
+
+
+- Seleccionando fechas y tiempo con DatePicker
+
+SwiftUI nos da un tipo determinado de picker llamado DatePicker que puede ir ligado a una propiedad de tipo fecha. Si, Swift tiene un tipo dedicado para trabajar con fechas, y es llamado - locamente - Date.
+
+Entonces, para utilizarlo hay que empezar con una propiedad de tipo @State:
+
+@State private var wakeUp = Date()
+
+Entonces ahora ya podemos enlazarlo con un picker de fecha así:
+
+var body: some View{
+	DatePicker(“Please enter a date”, selection: $wakeUp)
+}
+
+Intenta correr eso en el simulador para que vayas viendo cómo va quedando. Debería de poder verse una rueda giratoria con días y horas, más la etiqueta “Please enter a date” a la izquierda.
+
+La etiqueta puede verse algo fea. Intentemos cambiarla por lo siguiente:
+
+DatePicker(“”, selection: $wakeUp)
+
+Pero si hacemos eso ahora tendremos dos problemas: el picker de fecha aún hace espacio para una etiqueta aunque esté vacía, y ahora los usuarios con el lector de pantalla activo (VoiceOver) no tendrán idea para qué es el date picker.
+
+Hay dos alternativas, ambas que resuelven el problema.
+
+Primero, podemos envolver el DatePicker en un Form:
+
+var body: some View{
+	Form{
+		DatePicker(“Please Enter a Date”, selection: $wakeUp)
+	}
+}
+
+Justo como un Picker normal esto cambia el modo en que SwiftUI renderiza la vista. No obtenemos un nuevo view empujado hacia un NavigationView ahora; en lugar de eso, obtenemos una simple lista de renglones que se dobla a un date picker cuando se presiona.
+
+Esto se ve muy bonito, y combina la limpia simplicidad de forms con la interfaz familiar y amigable de los date pickers. Tristemente, ocasionalmente hay algunos glitches con la manera en que estos pickers son mostrados. Después nos enfocaremos en eso.
+
+En vez de usar forms, otra alternativa es usar el modificador labelIsHidden(), así:
+
+var body: some View{
+	DatePicker(“Please Enter a Date”, selection: $wakeUp)
+		.labelIsHidden()
+}
+
+Eso aún incluye a la etiqueta original para que los lectores de la pantalla lo puedan usar por VoiceOver, pero ahora no son visibles en pantalla - El date picker tomará todo el espacio en horizontal de la pantalla.
+
+Date pickers nos proveen un par de opciones de configuración que controlan el cómo trabajan. Primero, podemos usar displayedComponents para decidir qué tipo de opciones deberían ver los usuarios:
+
+- Si no damos este parámetro, el usuario ve día, hora y minuto.
+- Si usamos .date el usuario ve mes, día y año.
+- Si usamos .hourAndMinute los usuarios ven solo los componentes de hora y minuto
+
+Entonces, podemos seleccionar un tiempo preciso, así:
+
+DatePicker(“Please enter a time”, selection: $wakeUp, displayedComponents: .hourAndMinute)
+
+Finalmente, hay un parámetro de tipo “in” que trabaja de la misma manera que con Stepper: podemos proveerle un rango de fecha, y el picker de fecha va a asegurar al usuario que no puede seleccionar debajo de ello.
+
+Ahora, hemos estado utilizando rangos por unos momentos, y estamos acostumbrados a ver cosas como 1 … 5 o 0 ..< 10, pero también podemos usar fechas tipo Swift en rangos. Por ejemplo:
+
+// when you create a new Date instance it will be set to the current date and time
+let now = Date()
+
+// create a second Date instance set to one day in seconds from now
+let tomorrow = Date().addingTimeInterval(86400) 
+
+// create a range from those two
+let range = now ... tomorrow
+
+Eso es realmente útil con DatePicker, pero hay algo aún mejor: Swift nos permite formar “one-sided ranges” - rangos donde nosotros especifiquemos ya sea el inicio o final pero no ambos, dejando que Swift infiera el otro lado.
+
+Por ejemplo, podemos crear un date picker como este:
+
+DatePicker(“Please enter a date”, selection: $wakeUp, in: Date()…)
+
+Eso permitirá todas las fechas en el futuro, pero ninguna en el pasado - leámoslo como “De la fecha concurrente a cuando sea”.
