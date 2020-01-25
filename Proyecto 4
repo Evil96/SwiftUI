@@ -148,3 +148,73 @@ Por ejemplo, podemos crear un date picker como este:
 DatePicker(“Please enter a date”, selection: $wakeUp, in: Date()…)
 
 Eso permitirá todas las fechas en el futuro, pero ninguna en el pasado - leámoslo como “De la fecha concurrente a cuando sea”.
+
+- Trabajando con fechas
+
+Teniendo a usuarios ingresando fechas es tan fácil como enlazar una propiedad @State de tipo Date a un control de SwiftUI de DatePicker, pero esto puede tornarse confuso (woolier).
+
+Verás, trabajar con fechas es difícil. En realidad, MUY difícil. Más de lo que piensas.
+
+Por ejemplo:
+
+let now = Date()
+let tomorrow = Date().addingTimeInterval(86400)
+let range = now … tomorrow
+
+Eso crea un rango de ahora (Date() es la fecha actual) al mismo tiempo de mañana (86400 es el numero de segundos en un día).
+
+Eso podría verse sencillo, pero todos los días tienen 86400 segundos? Si sí, muchísima gente estaría desempleada. Pensemos en cómo se aprovecha el tiempo con la luz del día: a veces hay que adelantar el reloj una hora (perdiendo una hora) y otras atrasarlo (ganando una hora), significando que tal vez tengamos 23 o 25 horas en esos días. Luego hay saltos (leap) de segundos: tiempo que se le agrega al reloj para ajustarse a la rotación de la tierra.
+
+Si tu piensas que eso es difícil, intenta correr esto desde la terminal de tu mac: cal. Esto imprime un simple calendario para el mes en el que estamos enseñándote los días de la semana. Ahora intenta correr cal 9 1752, lo cual te va a mostrar el calendario para septiembre de 1752 - como podrás darte cuenta, faltan 12 días completos gracias al cambio de calendario de Juliano a Gregoriando. 
+
+Ahora, la razón de explicar todo esto no es propiamente para asustar - el uso de fechas para esta app son indispensables después de todo. En lugar de eso, hay que más bien entender la importancia y que para cualquier significante - cualquier uso de datos que en realidad importa en nuestro código - podemos nosotros confiar (rely) en los marcos de trabajo de Apple para cálculos y para formato.
+
+En el proyecto usaremos fechas de las siguientes 3 maneras:
+
+1. Escoger un tiempo sensible por default que sea “wake up”
+2. Leer la hora y los minutos en los que quieran despertar
+3. Mostrar la hora sugerida de dormir ya con un formato
+
+Podríamos, si quisiéramos, hacer todo eso a mano, pero entonces tendrás que afrontar a la realidad del aprovechamiento de luz en el día, saltos de segundo, y calendarios Gregorianos.
+
+Lo mejor es dejar que iOS haga todo ese trabajo por nosotros: es mucho menos trabajo, y está garantizado que sea correcto a pesar de la region en la que esté ubicado el usuario.
+
+Vayamos atacando cada uno de los puntos de manera individual, empezando con escoger la hora de despertar.
+
+Como ya has visto, Swift nos da Date para trabajar con fechas, y eso encapsula al año, mes, día, hora, minuto, segundo, zona horaria, y más. Sin embargo, no queremos andar pensando en todo eso - Queremos decir “dame las 8am como tiempo para levantarse, a pesar de qué día sea hoy.”
+
+Swift tiene una manera ligeramente (slightly) diferente para este propósito llamada DateComponents, lo cual nos permite leer o escribir partes específicas de una fecha en lugar de todo completo.
+
+Entonces, si quisiéramos una fecha que represente las 8 am de hoy, podríamos escribir el siguiente código:
+
+var components = DateComponents()
+components.hour = 8
+components.minute = 0
+let date = Calendar.current.date(from: components)
+
+Ahora, debido a las dificultades sobre la validación de la fecha, ese método date(from:) en realidad retorna una fecha opcional, entonces es una buena idea usar “nil coalescing” para decir “Si eso falla, entonces solo regrésame la fecha actual”, como esto:
+
+let date = Calendar.current.date(from: components) ?? Date()
+
+El segundo reto es cómo podemos leer la hora en la que quiere el usuario despertarse. Recuerda, DatePicker esta ligado a un Date dándonos un montón de información, y necesitamos encontrar la manera de agarrar los componentes para la hora y los minutos.
+
+Otra vez, DateComponents viene al rescate: podemos pedirle a iOS que provea los componentes específicos de una fecha, luego leerlos de vuelta. Un tropezón aquí es que hay una desconexión entre los valores que nosotros pedimos y los valores que recibimos gracias a la manera en que DateComponents trabaja: podemos preguntar por la hora y los minutos, pero vamos a ir de la mano de regreso a una instancia de DateComponents con valores opcionales para todas sus propiedades. Si, sabemos que la hora y los minutos estarán ahí porque son por los que hemos preguntado, pero aún necesitamos desenvolver los opcionales o proveer valores por defecto.
+
+Entonces, podemos pasar a escribir el siguiente código:
+
+let components = Calendar.current.dateComponents([.hour, .minute], from: someDate)
+let hour = components.hour ?? 0
+let minute = components.minute ?? 0
+
+El último reto es el cómo podemos darle formato a las fechas y a los tiempos, y una vez más Swift nos da un tipo específico para hacer la mayoría del trabajo por nosotros. Ahora es algo llamado DateFormatter, y nos deja convertir una fecha a una cadena en una gran variedad de maneras.
+
+Por ejemplo, si solo quisiéramos el tiempo de una fecha podríamos escribir lo siguiente:
+
+let formatter = DateFormatter()
+formatter.timeStyle = .short
+let dateString = formatter.string(from: Date())
+
+También podemos colocar (set) .dateStyle para obtener valores de fecha, y también pasar en un formato estándar utilizando dateFormat, pero bueno, eso ya rebasa los límites de este proyecto.
+
+El punto es que las fechas son difíciles, pero Apple nos ha dado gran cantidad de ayuda para que trabajar con las fechas no parezca tan complicado.
+Si aprendes a utilizarlas bien escribirás menos código, y escribirlo mejor también.
