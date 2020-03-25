@@ -1,0 +1,274 @@
+Proyecto 11
+
+Día 53
+Proyecto 11; parte 1
+
+Introducción
+
+En este proyecto vamos a armar una app para dar seguimiento a qué libros has leído y qué te parecieron, y seguirá la misma
+técnica que el proyecto 10; habrá que tomar todas esas habilidades que has adquirido, luego agregar algunas nuevas para
+pasar al siguiente nivel.
+
+Ahora, conocerás a Core Data, framework de Apple utilizado en especial para cuando queremos trabajar con bases de datos.
+Este proyecto servirá como introducción a Core Data, pero también nos iremos con mucho más detalle.
+
+Al mismo tiempo, también crearemos nuestra primer componente de interfaz de usuario - un calificador con estrellas con el
+cual el usuario pueda interactuar para dejar la reseña del libro que leyó. Esto significa darle introducción a otro “wrapper” 
+llamado @Binding. Ya viéndolo tendrá más sentido.
+
+Como siempre, empezaremos poco a poco viendo las nuevas técnicas que necesitas para este proyecto, así que por favor crea
+una nueva app de iOS llamada Bookworm, utilizando Single View App en la plantilla de proyectos. 
+
+Creando un componente personalizado con @Binding
+
+Ya has visto cómo la propiedad envolvente @State de SwiftUI nos deja trabajar con valores de tipo local, y cómo 
+@ObservedObject nos deja trabajar con tipos de referencia que se pueden compartir. Bueno, hay una tercera opción, llamada
+@Binding, la cual nos deja conectar una propiedad de tipo @State de una vista a algún modelo de datos subyacente.
+
+Piénsalo: cuando creamos un switch mandamos en algún orden de propiedad booleana que puede ser modificado, como lo siguiente:
+
+@State private var rememberMe = false
+
+var body: some View {
+    Toggle(isOn: $rememberMe) {
+        Text("Remember Me")
+    }
+}
+
+Entonces, la palanca (el switch) necesita cambiar nuestro valor Booleano cuando el usuario interactúe con el, pero, ¿cómo es
+que recuerda qué valor debería cambiar?
+
+Ahí es donde @Binding toma escena: nos deja crear un valor mutable en una vista, eso de hecho apunta a algún otro valor
+de algún otro lugar. En el caso de “Toggle”, el switch cambia su unión local a un Booleano, pero detrás de escenas eso en
+realidad está manipulando a la propiedad @State en nuestra vista.
+
+Esto hace a @Binding verdaderamente importante para lo que sea que requieras para crear un componente personalizado
+de interfaz de usuario. En su núcleo, los componentes de la interfaz de usuario (UI) sólo son vistas de SwiftUI como lo demás,
+pero @Binding es lo que hace la diferencia: mientras que deberían tener su propiedad local de tipo @State, también exponen propiedades de tipo @Binding que les dejan interactuar directamente on otras vistas.
+
+Para demostrar esto, vamos a crear un nuevo tipo de botón: uno que se mantenga abajo cuando se presione. Nuestra
+implementación básica será todo igual a como ya lo hemos visto antes: un botón con cierto relleno (padding), un gradiente
+lineal para el fondo, una figura de tipo Capsule, y así seguimos - agregar las siguientes líneas a ContentView.swift:
+
+struct PushButton: View {
+    let title: String
+    @State var isOn: Bool
+
+    var onColors = [Color.red, Color.yellow]
+    var offColors = [Color(white: 0.6), Color(white: 0.4)]
+
+    var body: some View {
+        Button(title) {
+            self.isOn.toggle()
+        }
+        .padding()
+        .background(LinearGradient(gradient: Gradient(colors: isOn ? onColors : offColors), startPoint: .top, endPoint: .bottom))
+        .foregroundColor(.white)
+        .clipShape(Capsule())
+        .shadow(radius: isOn ? 0 : 5)
+    }
+}
+
+Lo único extravagante aquí es que usé propiedades para los dos colores y su gradiente para que puedan ser personalizables
+para lo que sea que cree al botón.
+
+Ahora, podemos crear uno de esos botones como parte de nuestra interfaz de usuario principal, así:
+
+struct ContentView: View {
+    @State private var rememberMe = false
+
+    var body: some View {
+        VStack {
+            PushButton(title: "Remember Me", isOn: rememberMe)
+            Text(rememberMe ? "On" : "Off")
+        }
+    }
+}
+
+Eso tiene un TextView debajo del botón para que podamos seguir el estado del botón - intenta correr tu código para ver qué
+obtuvimos.
+
+Lo que encontrarás es que al presionar el botón ciertamente afecta la forma en la que se ve, pero nuestro TextView no refleja
+ese cambio - todo el tiempo dice “Off”. Claramente “algo” está cambiando porque la apariencia del boton cambia cuando se
+es presionado, pero ese cambio no se refleja en ContentView.
+
+Lo que está pasando aquí es que hemos definido un flujo de datos unidireccional: ContentView tiene su Booleano rememberMe,
+el cual se usa para crear un PushButton - el botón tiene un valor inicial que se lo provee ContentView. Sin embargo, una vez
+que el botón sea creado, toma el control sobre el valor: cambia el valor de la propiedad isOn (la “togglea”) entre verdadero
+y falso internamente al botón, pero no pasa ese valor de regreso a ContentView.
+
+Esto es un problema, porque tenemos dos posibles casos verdaderos: ContentView está guardando un valor, y PushButton
+otro. Afortunadamente, aquí es en donde @Binding entra: nos deja crear una colección bidireccional entre PushButton y 
+lo que sea que esté usándolo, para que cuando un valor cambie, el otro cambie también.
+
+Para hacer switch a @Binding necesitamos hacer dos cambios. Primero, en PushButton cambia su propiedad isOn a lo
+siguiente:
+
+@Binding var isOn: Bool
+
+Después, en ContentView cambia la manera en que creamos el botón a esto:
+
+PushButton(title: “Remember Me”, isOn: $rememberMe)
+
+Eso agrega un símbolo de dólar antes de rememberMe - estamos pasando la unión como tal, no el Booleano.
+
+Corre de nuevo el código, y encontrarás que todo funciona como lo esperado: haciendo switch al botón ahora también cambia
+a la vista de texto.
+
+Este es el poder de @Binding: por muy lejos que se vea, al botón solo le concierne hacerle el toggle al Booleano - no tiene
+idea de que algo más está monitoreando ese Booleano y actuando sobre los cambios.
+
+Usando tamaño de clases con el tipo de limpiado (erasure) AnyView
+
+SwiftUI le da acceso a cada una de nuestras vistas a una piscina compartida de información conocida como el
+“entorno”, y nosotros ya lo hemos usado cuando le damos “dismiss” a páginas. Si deseas volver a llamar, significa 
+crear una propiedad como lo siguiente:
+
+@Environment(\.presentationMode) var presentationMode
+
+Luego, cuando estábamos listos podíamos darle “dismiss” a la página, como lo siguiente:
+
+Text("Hello World")
+    .onTapGesture {
+        self.presentationMode.wrappedValue.dismiss()
+    }
+
+Este acercamiento, o enfoque, permite a SwiftUI estar seguro que el estado correcto se actualice cuando la vista es
+descartada - si adjuntamos una propiedad de tipo @State para presentar a la página, por ejemplo, será puesta en falso
+cuando la página sea descartada.
+
+Este entorno está en realidad lleno de cosas muy interesantes que podemos leer para ayudar a que nuestras apps
+trabajen mucho mejor. En este proyecto, estaremos usando el entorno para trabajar con CoreData, pero aquí te voy a enseñar
+otro importante uso de él: tamaño de clases (size classes). El tamaño de clases es la forma vaga de Apple de decirnos
+cuanto espacio tenemos para nuestras vistas.
+
+ Al decir “vaga” quiero decir lo siguiente: tenemos solamente dos tamaños de clases horizontal y verticalmente, llamados
+“compacto” y “regular”. Eso es todo - eso cubre todos los tamaños de pantalla desde el más largo iPad Pro en horizontal
+hasta el iPhone más pequeño en vertical. Eso no quiere decir que sea inservible PARA NADA, sólo que solo nos da a razonar
+sobre nuestras interfaces de usuario en los términos más amplios.
+
+Para ver a los tamaños de clase en acción, podemos crear una vista que tenga una propiedad para seguir al tamaño de clase
+del momento y desplegarlo en un TextView:
+
+struct ContentView: View {
+    @Environment(\.horizontalSizeClass) var sizeClass
+
+    var body: some View {
+        if sizeClass == .compact {
+            return HStack {
+                Text("Active size class:")
+                Text("COMPACT")
+            }
+            .font(.largeTitle)
+        } else {
+            return HStack {
+                Text("Active size class:")
+                Text("REGULAR")
+            }
+            .font(.largeTitle)
+        }
+    }
+}
+
+Intenta correr eso en un iPad Pro de 12.9 pulgadas de manera horizontal (landscape) con el simulador para que veas el
+efecto a mayor desempeño. Primero deberás ver “REGULAR” desplegado, porque a nuestra app se le dará la pantalla
+completa. Pero si haces “swipe” despacio hacia arriba desde la parte de abajo del simulador el dock aparecerá, y puedes
+jalar algo como Safari hacia la parte derecha de la pantalla del iPad para entrar al modo multi-tasking.
+
+Aún cuando la pantalla está a la mitad de uso por el multitasking, aún seguirás viendo “REGULAR”. Pero si al parte-pantallas
+lo pasas a la izquierda, por ejemplo, darle solo espacio a nuestra app de un cuarto de pantalla y 3 cuartos al multitasking,
+ahora aparecerá “COMPACT”.
+
+Entonces, en pantalla completa de ancho estamos en un tamaño de clase regular, y a la mitad de la pantalla seguimos
+en ese valor de regular, pero si dejamos el espacio aún más pequeño entonces ahora si pasa al valor “COMPACT”.
+Como dijimos; términos más amplios.
+
+Donde las cosas se llegan a poner todavía más interesantes es si queremos cambiar nuestro diseño dependiendo en el
+entorno. En esta situación, daría mayor sentido utilizar un VStack en vez de un HStack cuando estamos en un tamaño de
+clase compacto, sin embargo, esto es más tramposo de lo que crees.
+
+Primero, cambia el código para que nos retorne cualquiera de los dos; VStack o HStack:
+
+if sizeClass == .compact {
+    return VStack {
+        Text("Active size class:")
+        Text("COMPACT")
+    }
+    .font(.largeTitle)
+} else {
+    return HStack {
+        Text("Active size class:")
+        Text("REGULAR")
+    }
+    .font(.largeTitle)
+}
+
+Al construir el código verás un error medio raro: “La función declara un tipo de retorno opaco, pero las declaraciones de
+retorno en su cuerpo no coinciden con los tipos subyacentes”. Eso es, el retorno de tipo “some View” de “body” requiere
+que un sólo tipo sea retornado de todos los caminos en nuestro código - No podemos simplemente a veces retornar una
+vista y otras veces retornar algo diferente.
+
+Te sentirás muy astuto, y envolverás toda nuestra condicional dentro de otra vista, como en un VStack, pero eso tampoco
+funcionará. En vez de eso, necesitamos una solución más avanzada llamada tipo de limpiado (type erasure). Digo “avanzada”
+porque conceptualmente es muy inteligente y porque la implementación de esta misma no es tan trivial desde nuestra 
+perspectiva - de hecho, en realidad ya usándolo, “type erasure” es monstruosamente simple.
+
+Primero, veamos el código - reemplaza lo que tienes en “body” con esto:
+
+if sizeClass == .compact {
+    return AnyView(VStack {
+        Text("Active size class:")
+        Text("COMPACT")
+    }
+    .font(.largeTitle))
+} else {
+    return AnyView(HStack {
+        Text("Active size class:")
+        Text("REGULAR")
+    }
+    .font(.largeTitle))
+}
+
+Para ver un poco más claro lo que cambió:
+
+return AnyView(HStack {
+    // ...
+}
+.font(.largeTitle))
+
+Si corres el código nuevamente, podrás darte cuenta que ahora corre de manera limpia, y hasta se ve increíble mientras
+corre - la app ahora de manera fluida cambia entre HStack y VStack dependiendo del tamaño de clase.
+
+Lo que cambió es que ahora estamos envolviendo ambas pilas en una nuevo tipo de vista llamado AnyView, el cual
+es lo que es llamado un “type erased wrapper” o “tipo de envolvimiento limpio”.
+
+AnyView se conforma al mismo protocolo de View como Text, Color, VStack, y más, y también contiene dentro de sí mismo
+una vista de un tipo específico. Sin embargo, de manera externa AnyView no expone lo que contiene - Swift ve nuestra
+condición como si retornara ya sea AnyView o un AnyView, considerados como del mismo tipo. Aquí es de donde el nombre
+“type erasure” viene: AnyView efectivamente esconde - o borra - el tipo de vista que contiene.
+
+Ahora, la conclusión lógica aquí es preguntar por qué no usar AnyView todo el tiempo si nos permite pasar por alto
+las restricciones de “some View”. La respuesta es simple: desempeño. Cuando SwiftUI sabe exactamente qué es lo que hay en nuestra jerarquía de vistas, puede remover y añadir pequeñas partes de manera trivial como se necesite, pero cuando usamos AnyView estamos de hecho negándole a SwiftUI esa información. Como resultado, sería normal tener que hacer el doble de
+trabajo para mantener nuestra interfaz de usuario actualizada cuando cambios regulares pasen, entonces mejor hay que
+quitar el uso de AnyView a menos que verdaderamente lo necesites implementar.
+
+
+Cómo combinar CoreData y SwiftUI
+
+SwiftUI y Core Data fueron introducidos aproximadamente con una década de diferencia. SwiftUI con iOS 13 y Core Data con
+iPhoneOS 3; hace ya bastante tiempo ni siquiera se llamaba iOS porque el iPad aún no había sido presentada. A pesar de su distancia en tiempo, Apple puso toneladas de trabajo para asegurarse de que estos dos monstruos pudieran trabajar en conjunto,
+significando que Core Data se integra a SwiftUI como si hubiese sido diseñado para eso.
+
+Primero, lo básico: Core Data es un objeto gráfico y framework persistente, lo cual es una manera bonita de decir que nos permite
+definir objetos y propiedades de esos objetos, luego nos permite leerlos y escribir en ellos desde almacenamiento permanente.
+Desde la superficie esto suena como usar Codable o UserDefaults, pero es mucho más avanzado que eso: Core Data es capaz
+de ordenar y filtrar nuestros datos, y puede trabajar con muchos más datos - de hecho no hay límite de cuantos datos puede
+almacenar. Aún mejor, Core Data implementa todos los ordenamientos de funcionalidad más avanzada para cuando tu de verdad
+necesitas apoyarte en él: validación de datos, carga de datos “lazy”, hacer y deshacer, y mucho más.
+
+En este proyecto, estaremos usando sólo un pequeño pedazo de todo el poder de Core Data, pero se irá expandiendo poco a
+poco - primero quiero que le des una pequeña probadita a sus funciones. Cuando creaste tu proyecto de Xcode te pedí que
+seleccionaras la casilla que dice Use Core Data, y debió resultar con algunos cambios en tu proyecto:
+
+- Ahora tienes un archivo llamado Bookworm.xcdatamodeld. Esto describe a tu modelo de datos, el cual es efectivamente una lista de clases y sus propiedades.
+- Ahora hay código extra en AppDelegate.swift y SceneDelegate.swift para hacer uso de Core Data 
