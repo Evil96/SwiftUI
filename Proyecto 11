@@ -1,7 +1,9 @@
 Proyecto 11
 
+---------------------------------------------------------------------------------------------------------------
 Día 53
 Proyecto 11; parte 1
+---------------------------------------------------------------------------------------------------------------
 
 Introducción
 
@@ -272,3 +274,143 @@ seleccionaras la casilla que dice Use Core Data, y debió resultar con algunos c
 
 - Ahora tienes un archivo llamado Bookworm.xcdatamodeld. Esto describe a tu modelo de datos, el cual es efectivamente una lista de clases y sus propiedades.
 - Ahora hay código extra en AppDelegate.swift y SceneDelegate.swift para hacer uso de Core Data 
+
+Hacer uso de Core Data requiere de dos pasos: crear lo que llamamos a un contenedor persistente (persistent container),
+el cual es el que carga y guarda los datos actuales desde el almacenamiento del dispositivo, e inyectándolo en el entorno
+de SwiftUI para que todas nuestras views tengan acceso.
+
+Pero estos dos pasos ya los hace el template de Xcode por nosotros.
+
+Entonces, lo que nos queda es decidir qué datos almacenar en Core Data,  y cómo leerlos de vuelta. Para comenzar con eso,
+hay que abrir el archivo Bookworm.xcdatamodeld y empezara describir los datos utilizando el modelo de editor de Xcode.
+
+Previamente, describíamos datos así:
+
+struct Student {
+    var id: UUID
+    var name: String
+}
+
+Sin embargo, Core Data no trabaja de esa manera. Verás, Core Data necesita saber cómo se ven todos nuestros tipos de
+datos, qué contienen, y cómo se relacionan. Aquí es en donde el archivo .xcdatamodeld entra en acción: definimos nuestros
+tipos como “entidades”, luego creamos creamos propiedades como “atributos”, y Core Data es el responsable de convertir todo
+eso en un diseño de base de datos con la que pueda trabajar en tiempo de ejecución.
+
+Por propósitos de prueba, porfavor presiona el botón que dice Add Entity para crear una nueva entidad, luego doble click
+en su nombre para cambiarlo por “Student”. Luego, dar click al botón “+” directamente debajo de la tabla de Atributos para
+agregar dos atributos: “id” como un UUID y “name” como String. Eso le dice a Core Data todo lo que necesitamos saber para
+“crear” estudiantes y guardarlos. Hecho esto último, regresa al archivo ContentView.swift para escribir un poco de código.
+
+Para acumular información sobre Core Data basta con utilizar un “Fetch request” - describimos lo que queremos, como debería
+ser ordenado, y qué tantos filtros deben ser utilizados, y Core Data regresa todos los datos que coincidan. Necesitamos estar seguros de que este “Fetch request” sea actualizado conforme pase el tiempo, para que así como estudiantes sean creados
+o eliminados la interfaz de usuario sea síncrona con estas mismas actualizaciones.
+
+SwiftUI tiene una solución para esto, y - ¡ADIVINASTE! - es otra propiedad envuelta. Esta vez se llama @FetchRequest y toma
+dos parámetros: la entidad a la que queremos enfilar, y el orden de los resultados que queremos. Tiene un formato específico,
+entonces empecemos agregando el “fetch request” para nuestros estudiantes - por favor agrega la siguiente propiedad en
+ContentView:
+
+@FetchRequest(entity: Student.entity(), sortDescriptors: []) var students: FetchedResults<Student>
+
+Como breve explicación, esto crea el fetch request para nuestra entidad “Student”, no aplica ningún orden, y lo posiciona
+en una propiedad llamada students que tiene el tipo FetchedResults<Student>
+
+Hecho esto, ahora podemos empezar a utilizar students como un arreglo de Swift, pero hay algo que checar primero. Primero,
+pongamos el siguiente código que pone al arreglo dentro de un List:
+
+var body: some View {
+        VStack {
+            List {
+                ForEach(students, id: \.id) { student in
+                    Text(student.name ?? "Unknown")
+                }
+            }
+        }
+    }
+
+¿Ya viste qué es lo que hay que checar? Si, student.name es un optional - podría tener un valor o podría no tenerlo.
+Esta parte de Core Data puede que resulte un poco molesta: tiene el concepto de datos opcionales, pero es verdaderamente
+diferente concepto contra los Optionals de Swift. Si le decimos a Core Data “esta cosa no puede ser optional” (lo cual puedes
+hacer dentro del editor de modelo), aún así generará propiedades opcionales de Swift, porque todo Core Data se preocupa de
+si los datos tienen valor al ser almacenados - otras veces pueden ser nulos.
+
+Podrías correr el código en este momento si quisieras, pero no tiene mucho coso - la lista estará vacía porque no hemos
+agregado ningún dato aún, entonces nuestra base de datos está vacía. Para arreglar eso, vamos a crear un botón debajo de
+nuestra lista que agrega un nuevo estudiante aleatorio cada vez que se presiona, pero primero, necesitamos una nueva propiedad para almacenar un objeto contextual administrado (managed object context).
+
+Retrocedamos un poco, porque esto es importante. Cuando definimos a la entidad “Student”, lo que en realidad pasó fue que
+Core Data creo una clase para nosotros que hereda de una de sus propias clases: NSManagedObject. No podemos ver a esta
+clase en nuestro código porque es generada automáticamente cuando corremos el proyecto, justo como los modelos de Core ML.
+A estos objetos se les llama “administrados” o managed porque Core Data los va a estar buscando: los carga desde el
+contenedor persistente y escribe sus cambios de vuelta también.
+
+Todos nuestros managed objects viven dentro de un objeto contextual administrado, el cual es la cosa responsable de realmente
+ir por los objetos y venir de vuelta con ellos, así como guardar cambios y más. Puedes tener tantos objetos de este tipo como
+quieras pero luego abarcarás eso. Por ahora es más que suficiente con que tengas únicamente uno.
+
+No necesitamos crear a este tipo de objeto ya mencionado, porque Xcode ya hizo uno por nosotros. Aún mejor, ya lo agregó al
+entorno de SwiftUI, lo cual hace que la propiedad @FetchingRequest pueda funcionar - usa cualquier objeto administrado 
+que esté disponible en el entorno.
+
+De cualquier manera, cuando se trata de agregar y almacenar objetos, necesitamos acceso al objeto administrado que está
+en el entorno de SwiftUI. Este es otro uso para la propiedad @Environment - podemos pedirle el objeto administrado actual,
+y asignarlo a una propiedad para nuestro uso.
+
+Entonces, agrega esta propiedad a ContentView:
+
+@Environment(\.managedObjectContext) var moc
+
+Con eso puesto, el siguiente paso es agregar un botón que genere estudiantes aleatorios y los almacene en el objeto
+administrado. Para que se vea variado, asignaremos nombres aleatorios creando unos arreglos de firstNames y lastNames,
+luego utilizar randomElement() para tomar uno de cada uno.
+
+Empieza por agregar el siguiente botón justo debajo de List:
+
+Button("Add") {
+    let firstNames = ["Ginny", "Harry", "Hermione", "Luna", "Ron"]
+    let lastNames = ["Granger", "Lovegood", "Potter", "Weasley"]
+
+    let chosenFirstName = firstNames.randomElement()!
+    let chosenLastName = lastNames.randomElement()!
+
+    // more code to come        
+}
+
+Nota: inevitablemente habrá quienes no estén de acuerdo con usar ese “force unwrap” en los randomElement(), pero nosotros
+ya literalmente creamos arreglos para almacenar valores - siempre será verdadero. Otra alternativa es usar un nulo coalescente 
+(nil coalescing) con valores por default por si no te gustan los desenvolvimientos forzados (!).
+
+Ahora la parte interesante: crearemos un objeto de tipo Student, usando a la clase que Core Data generó por nosotros.
+Esto necesita ser adjuntado a un objeto administrado para que el objeto sepa en dónde va a ser almacenado. Luego podemos
+asignarle valores como normalmente lo haríamos para un struct.
+
+Entonces, agrega estas 3 líneas al closure del botón, por favor:
+
+let student = Student(context: self.moc)
+student.id = UUID()
+student.name = "\(chosenFirstName) \(chosenLastName)"
+
+Finalmente, necesitamos pedirle a nuestro objeto almacenado que se guarde. Esta es una llamada a función, porque 
+teóricamente podría fallar. En la práctica, nada de lo que hemos hecho hasta ahora tiene algún chance de que vaya a fallar,
+entonces podemos hacer la llamada utilizando try? - no nos importa hacer ningún “catch” de errores.
+
+Entonces, agrega esta última línea a la acción del botón:
+
+try? self.moc.save()
+
+Ahora, deberías poder ser capaz de correr la app y probarla - hazle click al botón “Add” varias veces para que genere 
+estudiantes de forma aleatoria y deberías poder ver cómo se van agregando a la lista. Aún mejor, podrá darte cuenta que al
+volver a correr la app, los elementos que agregaste van a seguir ahí porque Core Data los está guardando.
+
+Ahora, pensarás que todo esto fue una gran maraña de aprendizaje sin propósito y pérdida de tiempo, pero todo lo contrario.
+Ahora sabes lo que son las entidades, los atributos, sabes lo que es un objeto administrado y qué es un fetch request y ya
+viste cómo guardar cambios. Por supuesto que seguiremos viendo Core Data en el futuro, obviamente también para este
+proyecto, pero por ahora has llegado bastante lejos.
+
+Esta fue la última parte sobre el resumen para este proyecto, así que por favor resetea todo tu código a su estado inicial,
+y asegúrate de borrar a tu entidad Student de nuestro modelo de datos - ya no lo necesitaremos.
+
+---------------------------------------------------------------------------------------------------------------
+Día 54
+Proyecto 11; parte 2
+---------------------------------------------------------------------------------------------------------------
