@@ -420,3 +420,16 @@ Creando libros con Core Data
 Agregando la calificación con estrellas
 
 Armando una lista con un FetchRequest
+
+---------------------------------------------------------------------------------------------------------------
+Día 55
+Proyecto 11; parte 3
+---------------------------------------------------------------------------------------------------------------
+
+Mostrando los detalles de un libro
+
+Ordenando peticiones con NSSortDescriptor
+
+Borrar de un FetchRequest de Core Data
+
+Agregando una alrerta de manera programática
