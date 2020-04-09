@@ -432,4 +432,24 @@ Ordenando peticiones con NSSortDescriptor
 
 Borrar de un FetchRequest de Core Data
 
-Agregando una alrerta de manera programática
+Agregando una alerta de manera programática
+
+
+---------------------------------------------------------------------------------------------------------------
+Día 56
+Proyecto 11; parte 4
+---------------------------------------------------------------------------------------------------------------
+
+Esta ultima del proyecto consiste en retarte a ti mismo para resolver algunas cuestiones que le faltan (o podrían
+faltarle a nuestra app.
+
+Los retos son:
+
+Right now it’s possible to select no genre for books, which causes a problem for the detail view. 
+Please fix this, either by forcing a default, validating the form, or showing a default picture for 
+unknown genres – you can choose.
+
+Modify ContentView so that books rated as 1 star have their name shown in red.
+
+Add a new “date” attribute to the Book entity, assigning Date() to it so it gets the current date and time, then format that nicely somewhere in DetailView.
+
