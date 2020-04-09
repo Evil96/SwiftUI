@@ -440,16 +440,16 @@ Día 56
 Proyecto 11; parte 4
 ---------------------------------------------------------------------------------------------------------------
 
-Esta ultima del proyecto consiste en retarte a ti mismo para resolver algunas cuestiones que le faltan (o podrían
-faltarle a nuestra app.
+Esta ultima parte del proyecto consiste en retarte a ti mismo para resolver algunas cuestiones que le faltan (o 
+podrían) faltarle a nuestra app.
 
 Los retos son:
 
-Right now it’s possible to select no genre for books, which causes a problem for the detail view. 
-Please fix this, either by forcing a default, validating the form, or showing a default picture for 
-unknown genres – you can choose.
+Ahora mismo, hay posibilidad de dejar sin género al libro que estamos agregando, y eso le puede provocar problemas a
+DetailView. Trata de arreglar eso. Puedes forzar un valor por default, validar un form, o mostrar quizá una imagen
+que signifique que no hay nada seleccionado. (En mi caso yo restringí el botón de guardar).
 
-Modify ContentView so that books rated as 1 star have their name shown in red.
+Modifica a ContentView para que los libros que estén calificados con 1 estrella se muestre su nombre en rojo.
 
-Add a new “date” attribute to the Book entity, assigning Date() to it so it gets the current date and time, then format that nicely somewhere in DetailView.
-
+Agrega un nuevo atributo a tu entidad "Book" que se llame "date" asignandole Date() para que muestre la fecha
+en que se está añadiendo un nuevo libro. Dale un buen formato en DetailView.
