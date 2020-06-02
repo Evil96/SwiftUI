@@ -1,1 +1,17 @@
+Proyecto 12, parte 1
 
+- Core Data: Introducción
+
+Lo básico para trabajar con Core Data.
+
+Hay que crear un proyecto nuevo y llamarlo CoreDataProject. Forzosamente ese nombre o bueno, lo que sea distinto a
+Core Data o CoreData porque podrían llegar puntos en los que Xcode se confunda y no entienda a quién nos estamos refiriendo.
+
+- ¿Por qué .\self trabaja para ForEach?
+
+En general utilizamos .\self en Core Data para poder dar un valor a un identificador, más que nada de una forma primitiva.
+Valores Hash
+Protocolo Hashable
+
+Podemos hacer que Student (o bien, cualquier otro struct) se conforme al protocolo Hashable. Esto es muy parecido al
+funcionamiento del protocolo Codable.
