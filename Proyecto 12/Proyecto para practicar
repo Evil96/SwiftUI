@@ -15,3 +15,23 @@ Protocolo Hashable
 
 Podemos hacer que Student (o bien, cualquier otro struct) se conforme al protocolo Hashable. Esto es muy parecido al
 funcionamiento del protocolo Codable.
+
+La importancia de analizar cómo es que se va a estar comportando el protocolo Hashable, es que si hay dos elementos con el
+mismo tamaño de objeto, no haya problema. En realidad, Core Data tiene una forma muy inteligente de resolver este tipo de
+situaciones: los objetos que crea por nosotros ya llevan una seleccion de otras propiedades por encima de las que ya definimos
+en nuestro modelo de datos, incluyendo una que se llama "Object ID" - un identificador que es único hacia ese objeto sin
+importar las propiedades que contenga.
+
+- Creando subclases de NSManagedObject
+
+- Guardado Condicional de NSManagedObjectContext
+
+if self.moc.hasChanges {
+    try? self.moc.save()
+}
+
+- Asegurándonos de que los objetos de tipo Core Data sean únicos utilizando restricciones
+
+En SceneDelegate.swift:
+import CoreData
+context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
