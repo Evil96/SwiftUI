@@ -41,6 +41,10 @@ Proyecto 12, parte 2
 - Filtrando un @FetchRequest utilizando NSPredicate
 
 
+- Filtrando de manera dinámica un @FetchRequest con SwiftUI
+
+
+- Relación uno a muchos con CoreData, SwiftUI y @FetchRequest
 
 
 
