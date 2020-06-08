@@ -35,3 +35,31 @@ if self.moc.hasChanges {
 En SceneDelegate.swift:
 import CoreData
 context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+Proyecto 12, parte 2
+
+- Filtrando un @FetchRequest utilizando NSPredicate
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
