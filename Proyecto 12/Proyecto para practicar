@@ -51,6 +51,14 @@ Proyecto 12, parte 3 -> "Wrap up"
 
 - Terminando de implementar CoreData a un proyecto con SwiftUI
 
+Desafío:
+
+Cada una de las siguientes 3 tareas requiere que modifiquemos a la vista FilteredView que ya habíamos realizado:
+- Hacer que acepte un arreglo de objetos NSSortDescriptor para poder utilizarlas como FetchRequest
+- Hacer que acepte a un parámetro de cadenas que controle qué predicado es aplicado. Puedes usar una interpolación de cadenas (String interpolation)
+de Swift para posicionarlo en el predicado
+- Modificar el parámetro de cadena del predicado para que sea un enum, así como .beginsWith, luego haz que ese enum se resuelva a una cadena
+dentro del inicializador
 
 
 
