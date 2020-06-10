@@ -24,6 +24,14 @@ importar las propiedades que contenga.
 
 - Creando subclases de NSManagedObject
 
+Para crear una subclase de tipo NSManagedObject, seleccionamos el "Data Model Inspector" del lado derecho de Xcode teniendo seleccionada
+la entidad sobre la que queremos crear una nueva subclase
+Luego, nos vamos a Editor > Create NSManagedObject Subclass... y creamos la subclase de la entidad que habíamos seleccionado
+anteriormente
+Elegimos el path de guardado que sería el proyecto sobre el que estamos trabajando, y seleccionando el target que contiene a la
+subclase en una carpeta amarilla, ojo, no la azul
+
+
 - Guardado Condicional de NSManagedObjectContext
 
 if self.moc.hasChanges {
@@ -42,8 +50,18 @@ Proyecto 12, parte 2
 
 NSPredicate sirve para filtrar qué resultados son los que se deben de poder ver.
 
+Ejemplos del uso de NSPredicate:
+ NSPredicate(format: "universe == 'Star Wars'") //El más simple
+ NSPredicate(format: "universe == %@", "Star Wars")) //Todo en donde haya valor, dado un universo
+ NSPredicate(format: "name < %@", "F")) var ships: FetchedResults<Ship> //Nombres 
+ NSPredicate(format: "universe IN %@", ["Aliens", "Firefly", "Star Trek"]) //Nombres específicos
+ NSPredicate(format: "name BEGINSWITH %@", "E")) //Nombre que empiece con una letra (case sensitive)
+ NSPredicate(format: "name BEGINSWITH[c] %@", "e")) //Nombre que empiece con una letra (Ya no case sensitive)
+ NSPredicate(format: "NOT name BEGINSWITH[c] %@", "e")) //Contrario, que no empiece con dicha letra
+
 - Filtrando de manera dinámica un @FetchRequest con SwiftUI
 
+PENDIENTE: Sección "Wnat to go further?"
 
 - Relación uno a muchos con CoreData, SwiftUI y @FetchRequest
 
