@@ -40,6 +40,7 @@ Proyecto 12, parte 2
 
 - Filtrando un @FetchRequest utilizando NSPredicate
 
+NSPredicate sirve para filtrar qué resultados son los que se deben de poder ver.
 
 - Filtrando de manera dinámica un @FetchRequest con SwiftUI
 
