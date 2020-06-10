@@ -1,1 +1,8 @@
-Nuevo proyecto
+- Proyecto 13, parte 1
+Instafilter
+
+Vamos a empezar a utilizar CoreImage y a mezclar frameworks de Apple para incorporarlos a SwiftUI
+
+- ¿Cómo una propiedad envolvente se vuelve un struct?
+
+CMD + Shift + O
