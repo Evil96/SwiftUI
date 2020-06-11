@@ -5,4 +5,85 @@ Vamos a empezar a utilizar CoreImage y a mezclar frameworks de Apple para incorp
 
 - ¿Cómo una propiedad envolvente se vuelve un struct?
 
-CMD + Shift + O
+
+
+struct ContentView: View {
+    @State private var blurAmount: CGFloat = 0
+
+    var body: some View {
+        VStack {
+            Text("Hello, World!")
+                .blur(radius: blurAmount)
+
+            Slider(value: $blurAmount, in: 0...20)
+        }
+    }
+}
+
+Digamos que quieres imprimir el valor del Slider de acuerdo a su posición por fines de debuggeo. Pensaríamos en escribir algo
+como lo siguiente:
+
+@State private var blurAmount: CGFloat = 0 {
+    didSet {
+        print("New value is \(blurAmount)")
+    }
+}
+
+Pero, ¡Oh Sorpresa!, no hace realmente nada.
+
+Esto se debe a que como tal el @State está envolviendo a nuestro String y y"Cuandoa habíamos visto previamente que no podemos
+modificar propiedades dentro de la vista, PERO también sabemos que @State genera por sí mismo otro Struct, entonces, llega
+la verdadera pregunta: ¿Cómo "ese" struct lo podemos modificar nosotros?
+
+Xcode tiene una herramienta bastante buena llamada "Open Quickly", "Abrir Rápido" en español, con la cual podemos acceder
+con CMD + Shift + O.
+
+****Falta explicación de qué pasa al ingresar al editor de las propiedades*****
+
+Pero ahora, volviendo al código roto:
+
+@State private var blurAmount: CGFloat = 0 {
+    didSet {
+        print("New value is \(blurAmount)")
+    }
+}
+
+Por encima, este código dice: "Cuando el valor de blurAmount cambie, imprime su valor".
+Pero, tras bastidores y debido a que @State envuelve más bien su valor, entonces, lo que está diciendo es:
+"Cuando el struct State que envuelve a blurAmount cambie, imprime el nuevo valor de blur."
+
+Necesitamos crear algo llamada Custom Bindings en SwiftUI.
+
+- Creando Custom Bindings en SwiftUI
+
+Es necesario reestructurar la forma en que vamos a escribir las instrucciones que necesitamos considerando lo que ahora
+ya sabemos sobre los structs y los wrappers.
+Necesitamos utilizar algo llamado Custom Bindings para poder lograr el cometido.
+
+struct ContentView: View {
+    @State private var blurAmount: CGFloat = 0
+
+    var body: some View {
+        let blur = Binding<CGFloat>(
+            get: {
+                self.blurAmount
+            },
+            set: {
+                self.blurAmount = $0
+                print("New value is \(self.blurAmount)")
+            }
+        )
+
+        return VStack {
+            Text("Hello, World!")
+                .blur(radius: blurAmount)
+
+            Slider(value: blur, in: 0...20)
+        }
+    }
+}
+
+Lo que está pasando entre el setter y el getter del custom binding lo podemos ver en la búsqueda rápida (CMD + SHIFT + O)
+y escribir "Binding".
+
+
