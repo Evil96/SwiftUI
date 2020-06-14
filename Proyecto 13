@@ -125,3 +125,68 @@ guard let currentFilter = CIFilter(name: "CITwirlDistortion") else { return }
 currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
 currentFilter.setValue(2000, forKey: kCIInputRadiusKey)
 currentFilter.setValue(CIVector(x: inputImage.size.width / 2, y: inputImage.size.height / 2), forKey: kCIInputCenterKey)
+
+- Envolviendo un UIViewController en una vista de SwiftUI
+
+Incorporando las clases de UIKit hacia una vista en SwiftUI.
+
+CMD + N para crear un nuevo archivo de tipo Swift y llamarlo ImpagePicker.swift
+Añadir "Import SwiftUI" al código y las siguientes líneas de código en ese archivo:
+
+struct ImagePicker: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIImagePickerController
+}
+
+Al escribir esas líneas, aún no es suficiente. De hecho, Xcode va a lanzar un error en el que permitirá realizar cambios de
+manera automática. Presiona la bolita roja con centro blanco para poder llevar a cabo eso.
+Debemos terminar con un código como el siguiente:
+
+struct ImagePicker: UIViewControllerRepresentable {
+    func makeUIViewController(context: UIViewControllerRepresentableContext<ImagePicker>) -> UIImagePickerController {
+        code
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: UIViewControllerRepresentableContext<ImagePicker>) {
+        code
+    }
+}
+
+No vamos a utilizar a updateUIViewController(), entonces en realidad puedes simplemente borrar la línea "code" y que el
+método quede vacío.
+
+Sin embargo, makeUIViewController() si es importante, por lo que, por favor, agrega las siguientes líneas de código en
+ese método:
+let picker = UIImagePickerController()
+return picker
+
+Pronto le seguiremos metiendo más código a esa parte.
+
+Pero ahora, regrésate a ContentView.swift
+Ya podemos decir que los métodos de UIView ya pueden ser totalmente válidos como vistas de SwiftUI.
+Escribe el siguiente código en ContentView.swift:
+
+struct ContentView: View {
+    @State private var image: Image?
+    @State private var showingImagePicker = false
+
+    var body: some View {
+        VStack {
+            image?
+                .resizable()
+                .scaledToFit()
+
+            Button("Select Image") {
+               self.showingImagePicker = true
+            }
+        }
+        .sheet(isPresented: $showingImagePicker) {
+            ImagePicker()
+        }
+    }
+}
+
+Ahora si, puedes correr el proyecto.
+
+Podrás notar que hay un botón en nuestra vista que dice "Select Image" y al presionarlo, nos manda de abajo para arriba una
+hoja en donde podemos nosotros escoger una imagen. Eso está bien por ahora, porque como podrás notar, a pesar de seleccionar
+la imagen, no la pone en nuestra vista de SwiftUI. Para lograr eso, todavía nos falta ver un tema llamado "Coordinators".
