@@ -96,6 +96,9 @@ y escribir "Binding".
 
 - Integrando CoreImage con SwiftUI
 
+Aplicando el filtro sepia a la imagen de ejemplo:
+****Pendiente codigo de sepia y explicación de cómo llegar de Core Image a una vista en SwiftUI*****
+
 Aplicando filtro de pixelado:
 
 let currentFilter = CIFilter.pixellate()
