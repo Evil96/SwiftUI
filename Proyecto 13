@@ -91,6 +91,7 @@ y escribir "Binding".
 
 ****Pendiente expliación aquí
 
+***************************************************************************************************************************
 
 - Proyecto 13, parte 2
 
@@ -190,3 +191,33 @@ Ahora si, puedes correr el proyecto.
 Podrás notar que hay un botón en nuestra vista que dice "Select Image" y al presionarlo, nos manda de abajo para arriba una
 hoja en donde podemos nosotros escoger una imagen. Eso está bien por ahora, porque como podrás notar, a pesar de seleccionar
 la imagen, no la pone en nuestra vista de SwiftUI. Para lograr eso, todavía nos falta ver un tema llamado "Coordinators".
+
+***************************************************************************************************************************
+
+Proyecto 13, parte 3
+
+- Usando "Coordinators" para administrar el Vista-Controlador con SwiftUI
+
+***Pendiente de expliación*******
+
+Lo que hicimos fue:
+- Crear una vista de SwiftUI que se pueda conformar a UIViewControllerRepresentable
+- Le dimos un método makeUIViewController() que creó un orden de UIViewController, el cual en nuestro ejemplo fue un
+UIImagePickerController
+- Agregamos una Coordinator anidada para actuar como puente entre el view controller de UIKit y nuestra vista de SwiftUI
+- Le dimos al coordinador el método didFinishPickingMediaWithInfo, el cual será ejecutado por UIKit cuando se seleccione
+una imagen
+- Finalmente, le dimos a nuestro ImagePicker una propiedad @Binding para que pueda mandar los cambios de regreso a la vista
+padre
+
+Y a partir de ahí, tenemos suficiente para este proyecto con coordinators.
+No es tan bonito como SwiftUI, pero es muy funcional, y más cuando se trata de unir ambos frameworks.
+
+
+
+
+
+
+
+
+
