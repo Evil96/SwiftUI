@@ -90,3 +90,35 @@ y escribir "Binding".
 - Mostrando múltiples opciones con ActionSheet
 
 ****Pendiente expliación aquí
+
+
+- Proyecto 13, parte 2
+
+- Integrando CoreImage con SwiftUI
+
+Aplicando filtro de pixelado:
+
+let currentFilter = CIFilter.pixellate()
+currentFilter.inputImage = beginImage
+currentFilter.scale = 100
+
+Aplicando filtro "Efecto Cristal":
+
+let currentFilter = CIFilter.crystallize()
+currentFilter.inputImage = beginImage
+currentFilter.radius = 200
+
+En este ultimo se genera un bug
+
+con kCIInputImage:
+
+let currentFilter = CIFilter.crystallize()
+currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
+currentFilter.radius = 200
+
+Aplicando twirl distortion:
+
+guard let currentFilter = CIFilter(name: "CITwirlDistortion") else { return }
+currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
+currentFilter.setValue(2000, forKey: kCIInputRadiusKey)
+currentFilter.setValue(CIVector(x: inputImage.size.width / 2, y: inputImage.size.height / 2), forKey: kCIInputCenterKey)
