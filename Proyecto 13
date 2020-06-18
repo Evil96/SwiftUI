@@ -265,3 +265,7 @@ NavigationView {
 ***************************************************************************************************************************
 
 Proyecto 13, parte 5
+
+- Personalizando nuestro filtro utilizando ActionSheet
+
+- Guardando a la imagen con filtro utilizando UIImageWriteToSavedPhotosAlbum()
