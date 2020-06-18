@@ -268,4 +268,45 @@ Proyecto 13, parte 5
 
 - Personalizando nuestro filtro utilizando ActionSheet
 
+@State private var showingFilterSheet = false
+
+Start by adding this modifier below the sheet():
+
+.actionSheet(isPresented: $showingFilterSheet) {
+    // action sheet here
+}
+Now replace the // change filter button action with this:
+
+self.showingFilterSheet = true
+
+@State private var currentFilter: CIFilter = CIFilter.sepiaTone()
+
+currentFilter.setValue(filterIntensity, forKey: kCIInputIntensityKey)
+
+func setFilter(_ filter: CIFilter) {
+    currentFilter = filter
+    loadImage()
+}
+
+ActionSheet(title: Text("Select a filter"), buttons: [
+    .default(Text("Crystallize")) { self.setFilter(CIFilter.crystallize()) },
+    .default(Text("Edges")) { self.setFilter(CIFilter.edges()) },
+    .default(Text("Gaussian Blur")) { self.setFilter(CIFilter.gaussianBlur()) },
+    .default(Text("Pixellate")) { self.setFilter(CIFilter.pixellate()) },
+    .default(Text("Sepia Tone")) { self.setFilter(CIFilter.sepiaTone()) },
+    .default(Text("Unsharp Mask")) { self.setFilter(CIFilter.unsharpMask()) },
+    .default(Text("Vignette")) { self.setFilter(CIFilter.vignette()) },
+    .cancel()
+])
+
+Replace this line:
+
+currentFilter.setValue(filterIntensity, forKey: kCIInputIntensityKey)
+With this:
+
+let inputKeys = currentFilter.inputKeys
+if inputKeys.contains(kCIInputIntensityKey) { currentFilter.setValue(filterIntensity, forKey: kCIInputIntensityKey) }
+if inputKeys.contains(kCIInputRadiusKey) { currentFilter.setValue(filterIntensity * 200, forKey: kCIInputRadiusKey) }
+if inputKeys.contains(kCIInputScaleKey) { currentFilter.setValue(filterIntensity * 10, forKey: kCIInputScaleKey) }
+
 - Guardando a la imagen con filtro utilizando UIImageWriteToSavedPhotosAlbum()
