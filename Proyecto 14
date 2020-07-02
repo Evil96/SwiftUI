@@ -89,3 +89,12 @@ Proyecto 14, parte 4
 - Descargando información de Wikipedia
 
 - Ordenando los resultados de Wikipedia
+
+******************************************************************************************************************
+
+Proyecto 14, parte 5
+
+- Haciendo que la clase de alguien más se pueda acoplar al protocolo Codable (Guardando datos)
+
+Esta parte es muy importante porque por medio de FileManager y Codable guardamos los datos a escribir en la aplicación, y en este caso, el pin de
+localización.
