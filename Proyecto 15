@@ -1,3 +1,14 @@
-- Proyecto 15, parte 1
+**-** Proyecto 15, parte 1
 
-- 
+- Identificando vistas con etiquetas útiles
+
+Mejor configuración de UI utilizando mejores etiquetas de UI a la app para que al presionar el botón y VoiceOver la diga en voz alta, se entienda de una mejor
+manera lo que se quiere transmitir.
+
+- Ocultando y agrupando datos accesibles
+
+Modificadores para ocultar cosas innecesarias a VoiceOver o ir directo a lo que se necesita que VoiceOver diga en voz alta y nada que no sea de prioridad
+
+
+
+
