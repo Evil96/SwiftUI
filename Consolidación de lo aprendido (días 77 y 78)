@@ -1,0 +1,36 @@
+Día 77
+
+- Lo que se aprendió
+
+- Puntos clave
+
+- Reto
+
+Día 78
+
+Implementación para obtener la localización del usuario
+
+Para esto, siempre es bueno ir al info.plist y pedir permiso al usuario de usar su localización
+
+Primero la clase inicializadora de la localización del usuario
+
+import CoreLocation
+
+class LocationFetcher: NSObject, CLLocationManagerDelegate {
+    let manager = CLLocationManager()
+    var lastKnownLocation: CLLocationCoordinate2D?
+
+    override init() {
+        super.init()
+        manager.delegate = self
+    }
+
+    func start() {
+        manager.requestWhenInUseAuthorization()
+        manager.startUpdatingLocation()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        lastKnownLocation = locations.first?.coordinate
+    }
+}
