@@ -34,3 +34,25 @@ class LocationFetcher: NSObject, CLLocationManagerDelegate {
         lastKnownLocation = locations.first?.coordinate
     }
 }
+
+Luego, la incorporación a SwiftUI
+
+struct ContentView: View {
+    let locationFetcher = LocationFetcher()
+
+    var body: some View {
+        VStack {
+            Button("Start Tracking Location") {
+                self.locationFetcher.start()
+            }
+
+            Button("Read Location") {
+                if let location = self.locationFetcher.lastKnownLocation {
+                    print("Your location is \(location)")
+                } else {
+                    print("Your location is unknown")
+                }
+            }
+        }
+    }
+}
