@@ -1,1 +1,42 @@
-Proyecto 16
+Proyecto 16, parte 1
+
+- Introducción a Hot Prospects
+
+Será una app que sea capaz de manejar las juntas que se lleguen a tener con personas como en un evento o parecido y va a ser capaz hasta de almacenar códigos
+QR
+
+- Leyendo valores personalizados desde el entorno con @EnvironmentObject
+
+class User: ObservableObject {
+    @Published var name = "Taylor Swift"
+    
+}
+
+struct EditView: View {
+    @EnvironmentObject var user: User
+    
+    var body: some View {
+        TextField("Name", text: $user.name)
+    }
+}
+
+struct DisplayView: View {
+    @EnvironmentObject var user: User
+    
+    var body: some View {
+        Text(user.name)
+    }
+}
+
+struct TechniqueContentView: View {
+    let user = User()
+    
+    var body: some View {
+        VStack {
+            EditView().environmentObject(user)
+            DisplayView().environmentObject(user)
+        }
+        //You can also write the modifiers outside:
+        //.environmentObject(user)
+    }
+}
