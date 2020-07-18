@@ -144,6 +144,18 @@ struct TechniqueResultType: View {
 
 - Publicando manualmente cambios en ObservableObject
 
+Tanto este:
+    @Published var value = 0
 
+Como este:
+        /*
+        var value = 0 {
+            willSet {
+                objectWillChange.send()
+            }
+        }
+        */
+
+Hacen el mismo trabajo
 
 **********************************************************************************************************************************************************
