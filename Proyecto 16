@@ -156,6 +156,20 @@ Como este:
         }
         */
 
-Hacen el mismo trabajo
+Hacen el mismo trabajo, solo que en el segundo ejemplo tenemos mayor apertura para hacer lo que nosotros queramos con ese comportamiento.
+
+- Controlando una interpolación de imágenes en SwiftUI
+
+struct TechniqueImageInterpolation: View {
+    var body: some View {
+        Image("example")
+            .interpolation(.none)
+            .resizable()
+            .scaledToFit()
+            .frame(maxHeight: .infinity)
+            .background(Color.black)
+            .edgesIgnoringSafeArea(.all)
+    }
+}
 
 **********************************************************************************************************************************************************
