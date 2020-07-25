@@ -175,3 +175,81 @@ struct TechniqueImageInterpolation: View {
 **********************************************************************************************************************************************************
 
 Proyecto 16, parte 3
+
+- Creando menús de contexto (Context Menus)
+
+@State private var backgroundColor = Color.red
+
+VStack {
+            Text("Hello, World!")
+                .padding()
+                .background(backgroundColor)
+            
+            Text("Change Color")
+                .padding()
+                .contextMenu {
+                    Button(action: {
+                        self.backgroundColor = .red
+                    }) {
+                        Text("Red")
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.red)
+                    }
+                    
+                    Button(action: {
+                        self.backgroundColor = .green
+                    }) {
+                        Text("Green")
+                    }
+                    
+                    Button(action: {
+                        self.backgroundColor = .blue
+                    }) {
+                        Text("Blue")
+                    }
+                }
+        }
+        
+- Programando (en tiempo) notificaciones locales
+
+VStack {
+            Button("Request permission") {
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+                    if success {
+                        print("All set!")
+                    } else if let error = error {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+            .padding()
+            
+            Spacer()
+            
+            Button("Schedule notification") {
+                let content = UNMutableNotificationContent()
+                content.title = "Feed the cat"
+                content.subtitle = "It looks hungry"
+                content.sound = UNNotificationSound.default
+
+                // show this notification five seconds from now
+                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+
+                // choose a random identifier
+                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+                // add our notification request
+                UNUserNotificationCenter.current().add(request)
+            }
+            .padding()
+        }
+        
+- Agregando dependencias de Swift en Xcode (Swift Package Manager (SPM))
+
+File > Swift Packages > Add Package Dependency
+
+SemVer (Semantic Versioning) siendo:
+
+Ejemplo -> Versión 1.5.3, el 1 es el "mayor number", el 5 es el "minor number" y el 3 es el "patch number".
+
+
