@@ -376,6 +376,16 @@ De vuelta a ProspectsView.swift:
 
 self.prospects.toggle(prospect)
 
+Por último, en la clase nuevamente cambiamos esto:
+
+var isContacted = false
+
+por esto:
+
+fileprivate(set) var isContacted = false
+
+fileprivate agrega seguridad a la hora de correr apps de este tipo
+
 **********************************************************************************************************************************************************
 
 Proyecto 16, parte 6
