@@ -266,11 +266,115 @@ Proyecto 16, parte 4
 
 Proyecto 16, parte 5
 
-- Siguiente
+- Generando y escalando un código QR
 
--
+En MeView:
 
--
+import CoreImage.CIFilterBuiltins
+import SwiftUI
+
+struct MeView: View {
+    @State private var name = "Anonymous"
+    @State private var emailAddress = "you@yoursite.com"
+    
+    let context = CIContext()
+    let filter = CIFilter.qrCodeGenerator()
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                TextField("Name", text: $name)
+                    .textContentType(.name)
+                    .font(.title)
+                    .padding(.horizontal)
+
+                TextField("Email address", text: $emailAddress)
+                    .textContentType(.emailAddress)
+                    .font(.title)
+                    .padding([.horizontal, .bottom])
+                
+                Image(uiImage: generateQRCode(from: "\(name)\n\(emailAddress)"))
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+
+                Spacer()
+            }
+            .navigationBarTitle("Your code")
+        }
+    }
+    
+    func generateQRCode(from string: String) -> UIImage {
+        let data = Data(string.utf8)
+        filter.setValue(data, forKey: "inputMessage")
+
+        if let outputImage = filter.outputImage {
+            if let cgimg = context.createCGImage(outputImage, from: outputImage.extent) {
+                return UIImage(cgImage: cgimg)
+            }
+        }
+
+        return UIImage(systemName: "xmark.circle") ?? UIImage()
+    }
+}
+
+- Escaneando códigos QR en SwiftUI
+
+En ProspectsView.swift:
+
+import CodeScanner ----> IMPORTANTE: Se agrega una dependencia ya que en SwiftUI aún no se puede leer un código QR tan fluidamente
+
+En states:
+@State private var isShowingScanner = false
+
+En el botón de escaneo:
+self.isShowingScanner = true
+
+La acción al presionar el botón de escaneo:
+.sheet(isPresented: $isShowingScanner) {
+                CodeScannerView(codeTypes: [.qr], simulatedData: "Edgar V\nedgar@edgarvil.com", completion: self.handleScan)
+            }
+
+Método para hacer funcionar la lectura del código QR:
+func handleScan(result: Result<String, CodeScannerView.ScanError>) {
+       self.isShowingScanner = false
+        switch result {
+        case .success(let code):
+            let details = code.components(separatedBy: "\n")
+            guard details.count == 2 else { return }
+
+            let person = Prospect()
+            person.name = details[0]
+            person.emailAddress = details[1]
+
+            self.prospects.people.append(person)
+        case .failure(let error):
+            print("Scanning failed")
+        }
+    }
+
+- Agregando opciones con un context menu
+
+En ProspectsView.swift:
+.contextMenu {
+                        Button(prospect.isContacted ? "Mark Uncontacted" : "Mark Contacted" ) {
+                            prospect.isContacted.toggle()
+                        }
+                    }
+
+En Prospect.swift (la clase):
+
+func toggle(_ prospect: Prospect) {
+    objectWillChange.send()
+    prospect.isContacted.toggle()
+}
+
+Importante: Debes llamar a objectWillChange.send() justo antes de cambiar a tu propiedad para asegurar que SwiftUI jale su animación de manera correcta.
+
+De vuelta a ProspectsView.swift:
+
+self.prospects.toggle(prospect)
 
 **********************************************************************************************************************************************************
 
