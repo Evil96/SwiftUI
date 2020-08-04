@@ -420,3 +420,16 @@ class Prospects: ObservableObject {
         save()
     }
 }
+
+Ahora, en ProspectsView.swift, línea 93:
+
+self.prospects.save()
+
+Luego, de vuelta a Prospect.swift:
+
+Linea 22 ---> static let saveKey = "SavedData"
+
+Linea 25 ---> if let data = UserDefaults.standard.data(forKey: Self.saveKey) {
+
+Linea 37 ---> UserDefaults.standard.set(encoded, forKey: Self.saveKey)
+
