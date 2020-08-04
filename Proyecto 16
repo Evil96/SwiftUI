@@ -433,3 +433,25 @@ Linea 25 ---> if let data = UserDefaults.standard.data(forKey: Self.saveKey) {
 
 Linea 37 ---> UserDefaults.standard.set(encoded, forKey: Self.saveKey)
 
+De vuelta a Prospect:
+
+func add(_ prospect: Prospect) {
+        people.append(prospect)
+        save()
+    }
+   
+Linea 21 ---> @Published private(set) var people: [Prospect]
+
+Linea 35 ---> private func save() {
+
+Como ya se hace privado el método, la manera de aplicarlo en ProspectsView.swift ya no va a funcionar, entonces, hay que reemplazar estas dos lineas:
+//self.prospects.people.append(person)
+            
+//self.prospects.save()
+
+Con esta:
+self.prospects.add(person)
+
+Y queda agregado User Defaults con la mejor implementación posible de software usando mejores prácticas de programación que las habituales.
+
+
