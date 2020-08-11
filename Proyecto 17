@@ -7,3 +7,6 @@ Proyecto 17, parte 1
 
 - Generando vibraciones con UINotificationFeedbackGenerator y Core Haptics
 ****ME FALTÓ*****
+
+- Deshabilitando la interactividad del usuario con allowsHitTesting()
+****ME FALTÓ*****
