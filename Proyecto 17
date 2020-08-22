@@ -374,3 +374,78 @@ struct Card {
 
 Proyecto 17, parte 4
 
+- Coloreando vistas conforme el usuario haga Swipe
+
+En CardView:
+
+RoundedRectangle(cornerRadius: 25, style: .continuous)
+    .fill(Color.white)
+    .shadow(radius: 10)
+    
+Antes del modificador .shadow():
+
+.background(
+    RoundedRectangle(cornerRadius: 25, style: .continuous)
+        .fill(offset.width > 0 ? Color.green : Color.red)
+)
+
+Cambiando al modificador .fill():
+
+.fill(
+    Color.white
+        .opacity(1 - Double(abs(offset.width / 50)))
+)
+
+En el mismo CardView, hasta arriba:
+@Environment(\.accessibilityDifferentiateWithoutColor) var differentiateWithoutColor
+
+Y modificando al método RoundedRectangle:
+
+RoundedRectangle(cornerRadius: 25, style: .continuous)
+    .fill(
+        differentiateWithoutColor
+            ? Color.white
+            : Color.white
+                .opacity(1 - Double(abs(offset.width / 50)))
+
+    )
+    .background(
+        differentiateWithoutColor
+            ? nil
+            : RoundedRectangle(cornerRadius: 25, style: .continuous)
+                .fill(offset.width > 0 ? Color.green : Color.red)
+    )
+    .shadow(radius: 10)
+    
+Ahora, de vuelta a ContentView:
+
+Primero -> @Environment(\.accessibilityDifferentiateWithoutColor) var differentiateWithoutColor
+
+Luego, después del VStack que está dentro del ZStack:
+
+if differentiateWithoutColor {
+    VStack {
+        Spacer()
+
+        HStack {
+            Image(systemName: "xmark.circle")
+                .padding()
+                .background(Color.black.opacity(0.7))
+                .clipShape(Circle())
+            Spacer()
+            Image(systemName: "checkmark.circle")
+                .padding()
+                .background(Color.black.opacity(0.7))
+                .clipShape(Circle())
+        }
+        .foregroundColor(.white)
+        .font(.largeTitle)
+        .padding()
+    }
+}
+
+- Cuenta atrás con un Timer
+
+
+
+*********************************************************************************************************************************************************
