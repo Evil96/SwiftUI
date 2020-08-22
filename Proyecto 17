@@ -446,6 +446,112 @@ if differentiateWithoutColor {
 
 - Cuenta atrás con un Timer
 
+Yendo a ContentView:
 
+@State private var timeRemaining = 100
+let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+Luego, este modificador en el ZStack que se encuentra en la parte más hacia afuera del UI:
+
+.onReceive(timer) { time in
+    guard self.isActive else { return }
+    if self.timeRemaining > 0 {
+        self.timeRemaining -= 1
+    }
+}
+
+Luego, dentro del VStack que contiene a nuestro ZStack de las cartas:
+
+Text("Time: \(timeRemaining)")
+    .font(.largeTitle)
+    .foregroundColor(.white)
+    .padding(.horizontal, 20)
+    .padding(.vertical, 5)
+    .background(
+        Capsule()
+            .fill(Color.black)
+            .opacity(0.75)
+    )
+    
+Debió quedar un código como el siguiente:
+
+ZStack {
+    Image("background")
+        .resizable()
+        .scaledToFill()
+        .edgesIgnoringSafeArea(.all)
+
+    VStack {
+        Text("Time: \(timeRemaining)")
+            .font(.largeTitle)
+            .foregroundColor(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(Color.black)
+                    .opacity(0.75)
+            )
+
+        ZStack {
+        
+Todoluce bien, pero hay un pequeño problema con la aplicación y esto se debe sobretodo a cuando el usuario deja la app en background
+y el timer no sabe quñe hacer y se pausa alrededor de 3 a 4 segundos después de que el usuario pasó a background.
+Esto se soluciona de la siguiente manera:
+
+Primero, una propiedad:
+@State private var isActive = true
+
+Luego, dos modificadores de tipo .onReceive:
+
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+    self.isActive = false
+}
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+    self.isActive = true
+}
+
+Y por último modificamos el .onReceive que ya teníamos:
+
+.onReceive(timer) { time in
+    guard self.isActive else { return }
+    if self.timeRemaining > 0 {
+        self.timeRemaining -= 1
+    }
+}
+
+- Terminando la app con AllowsHitTesting()
+
+Primero, agregamos allowsHitTesting al ZStack que contiene a las cartas:
+
+.allowsHitTesting(timeRemaining > 0)
+
+Luego, necesitamos un método para resetear las cartas cuando el usuario ya no tenga más cartas que pasar:
+func resetCards() {
+    cards = [Card](repeating: Card.example, count: 10)
+    timeRemaining = 100
+    isActive = true
+}
+
+Al momento de terminarse las cartas, desplegamos un botón que va a hacer que se reinicien las mismas:
+if cards.isEmpty {
+    Button("Start Again", action: resetCards)
+        .padding()
+        .background(Color.white)
+        .foregroundColor(.black)
+        .clipShape(Capsule())
+}
+
+Agregamos este if en la funcion remove que es con el que el estado va a saber que ya no hay cartas:
+if cards.isEmpty {
+    isActive = false
+}
+
+Por último, actualizamos al modificador .onReceive para que en el background de la aplicación sepa si está o no vacío el conjunto de cartas:
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+    if self.cards.isEmpty == false {
+        self.isActive = true
+    }
+}
 
 *********************************************************************************************************************************************************
