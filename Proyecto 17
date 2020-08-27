@@ -560,6 +560,7 @@ Proyecto 17, parte 5
 
 - Haciendo que el iPhone vibre con UINotificationFeedbackGenerator
 
+En CardView:
 @State private var feedback = UINotificationFeedbackGenerator()
 
 if self.offset.width > 0 {
@@ -577,4 +578,180 @@ self.removal?()
 
 - Arreglando algunos bugs
 
+En ContentView:
+.allowsHitTesting(index == self.cards.count - 1)
+Image(decorative: "background")
+
+.accessibility(hidden: index < self.cards.count - 1)
+
+De nuevo a CardView:
+.accessibility(addTraits: .isButton)
+
+@Environment(\.accessibilityEnabled) var accessibilityEnabled
+
+VStack {
+    if accessibilityEnabled {
+        Text(isShowingAnswer ? card.answer : card.prompt)
+            .font(.largeTitle)
+            .foregroundColor(.black)
+    } else {
+        Text(card.prompt)
+            .font(.largeTitle)
+            .foregroundColor(.black)
+
+        if isShowingAnswer {
+            Text(card.answer)
+                .font(.title)
+                .foregroundColor(.gray)
+        }
+    }
+}
+
+De nuevo a ContentView:
+
+HStack {
+    Button(action: {
+        withAnimation {
+            self.removeCard(at: self.cards.count - 1)
+        }
+    }) {
+        Image(systemName: "xmark.circle")
+            .padding()
+            .background(Color.black.opacity(0.7))
+            .clipShape(Circle())
+    }
+    .accessibility(label: Text("Wrong"))
+    .accessibility(hint: Text("Mark your answer as being incorrect."))
+    Spacer()
+
+    Button(action: {
+        withAnimation {
+            self.removeCard(at: self.cards.count - 1)
+        }
+    }) {
+        Image(systemName: "checkmark.circle")
+            .padding()
+            .background(Color.black.opacity(0.7))
+            .clipShape(Circle())
+    }
+    .accessibility(label: Text("Correct"))
+    .accessibility(hint: Text("Mark your answer as being correct."))
+}
+
+y dentro del func removeCard:
+guard index >= 0 else { return }
+
+luego, dentro del struct de content view:
+@Environment(\.accessibilityEnabled) var accessibilityEnabled
+
+Luego, modificando el if:
+if differentiateWithoutColor || accessibilityEnabled {
+
+Por ultimo, de regreso a CardView:
+.animation(.spring()) despues del .onTapGesture para que al hacer swipe se vea mejor
+
+- Agregando y borrando cartas
+
+En ContentView:
+@State private var showingEditScreen = false
+
+Luego, antes del if del ||:
+VStack {
+    HStack {
+        Spacer()
+
+        Button(action: {
+            self.showingEditScreen = true
+        }) {
+            Image(systemName: "plus.circle")
+                .padding()
+                .background(Color.black.opacity(0.7))
+                .clipShape(Circle())
+        }
+    }
+
+    Spacer()
+}
+.foregroundColor(.white)
+.font(.largeTitle)
+.padding()
+
+En Card.swift:
+
+struct Card: Codable {
+
+Creamos un archivo nuevo de nombre EditCards.swift
+
+En ese archivo, escribimos lo siguiente:
+
+struct EditCards: View {
+    @Environment(\.presentationMode) var presentationMode
+    @State private var cards = [Card]()
+    @State private var newPrompt = ""
+    @State private var newAnswer = ""
+
+    var body: some View {
+        NavigationView {
+            List {
+                Section(header: Text("Add new card")) {
+                    TextField("Prompt", text: $newPrompt)
+                    TextField("Answer", text: $newAnswer)
+                    Button("Add card", action: addCard)
+                }
+
+                Section {
+                    ForEach(0..<cards.count, id: \.self) { index in
+                        VStack(alignment: .leading) {
+                            Text(self.cards[index].prompt)
+                                .font(.headline)
+                            Text(self.cards[index].answer)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .onDelete(perform: removeCards)
+                }
+            }
+            .navigationBarTitle("Edit Cards")
+            .navigationBarItems(trailing: Button("Done", action: dismiss))
+            .listStyle(GroupedListStyle())
+            .onAppear(perform: loadData)
+        }
+    }
+
+    func dismiss() {
+        presentationMode.wrappedValue.dismiss()
+    }
+
+    func loadData() {
+        if let data = UserDefaults.standard.data(forKey: "Cards") {
+            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
+                self.cards = decoded
+            }
+        }
+    }
+
+    func saveData() {
+        if let data = try? JSONEncoder().encode(cards) {
+            UserDefaults.standard.set(data, forKey: "Cards")
+        }
+    }
+
+    func addCard() {
+        let trimmedPrompt = newPrompt.trimmingCharacters(in: .whitespaces)
+        let trimmedAnswer = newAnswer.trimmingCharacters(in: .whitespaces)
+        guard trimmedPrompt.isEmpty == false && trimmedAnswer.isEmpty == false else { return }
+
+        let card = Card(prompt: trimmedPrompt, answer: trimmedAnswer)
+        cards.insert(card, at: 0)
+        saveData()
+    }
+
+    func removeCards(at offsets: IndexSet) {
+        cards.remove(atOffsets: offsets)
+        saveData()
+    }
+}
+
+
+@Environment(\.accessibilityEnabled) var accessibilityEnabled
 
