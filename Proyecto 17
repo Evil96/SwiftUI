@@ -752,6 +752,39 @@ struct EditCards: View {
     }
 }
 
+Luego, de regreso a ContentView:
+.sheet(isPresented: $showingEditScreen, onDismiss: resetCards) {
+    EditCards()
+}
 
-@Environment(\.accessibilityEnabled) var accessibilityEnabled
+.onAppear(perform: resetCards)
+
+y cambiamos esto:
+@State private var cards = [Card](repeating: Card.example, count: 10)
+Por esto:
+@State private var cards = [Card]()
+
+Luego, a los funcs:
+
+func resetCards() {
+        //cards = [Card](repeating: Card.example, count: 10)
+        timeRemaining = 100
+        isActive = true
+        loadData()
+    }
+    
+    func loadData() {
+        if let data = UserDefaults.standard.data(forKey: "Cards") {
+            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
+                self.cards = decoded
+            }
+        }
+    }
+    
+Y ya por último, en el navigationView de EditCards:
+.navigationViewStyle(StackNavigationViewStyle())
+
+Sin esa última línea, la .sheet sale totalmente en blanco
+
+
 
