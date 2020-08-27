@@ -555,3 +555,26 @@ Por último, actualizamos al modificador .onReceive para que en el background de
 }
 
 *********************************************************************************************************************************************************
+
+Proyecto 17, parte 5
+
+- Haciendo que el iPhone vibre con UINotificationFeedbackGenerator
+
+@State private var feedback = UINotificationFeedbackGenerator()
+
+if self.offset.width > 0 {
+    self.feedback.notificationOccurred(.success)
+} else {
+    self.feedback.notificationOccurred(.error)
+}
+
+self.removal?()
+
+.onChanged { offset in
+    self.offset = offset.translation
+    self.feedback.prepare()
+}
+
+- Arreglando algunos bugs
+
+
